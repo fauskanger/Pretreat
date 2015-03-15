@@ -45,7 +45,7 @@ for dim in dims:
 # print((0, 10) in m.objectgroups["Objects"])
 #
 # # get the object named "Door1"
-# print("Star1:", m.objectgroups["Objects"]["Star1"])
+#print("Star1:", m.objectgroups["Objects"]["Star1"])
 #
 # # get the object in coords (5, 3)
 # print("Obj at (5, 3)", m.objectgroups["Objects"][1, 17])
@@ -67,11 +67,24 @@ def on_draw():
     m.draw()
     batch = pyglet.graphics.Batch()
 
-    def draw_square(x, y, width, height):
+    def draw_rectangle(x, y, width, height):
         points = [x, y, x+width, y, x+width, y+height, x, y+height]
-        batch.add(4, pyglet.gl.GL_QUADS, ('v2f', points))
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', points))
         print(points)
-    draw_square(50, 100, 200, 50)
+    draw_rectangle(x=50, y=100, width=200, height=50)
+
+    def draw_diagonal_rectangle(start_point, end_point, radius):
+        x1 = start_point[0]
+        y1 = start_point[1]
+        x2 = end_point[0]
+        y2 = end_point[1]
+        slope = (y2-y1)/(x2-x1)
+        slope_inv = -1/slope
+
+        # tilt_width = width/2 / slope_inv
+
+        #points = [x, y, x+width, y, x+width, y+height, x, y+height]
+
     batch.draw()
 
 
@@ -92,7 +105,6 @@ def on_key_press(symbol, modifiers):
         window.set_size(m.p_width, m.p_height)
     if symbol == key.G:
         window.set_size(400, 300)
-
 
 
 pyglet.app.run()
