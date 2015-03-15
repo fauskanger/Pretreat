@@ -1,0 +1,11 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# PyCharm-folders
+*/.idea/*
+.idea/*
+
+# Resources not needed
+*/resources/bag/*
+*/resources/icons/*
