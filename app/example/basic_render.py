@@ -2,11 +2,13 @@
 
 import pyglet
 import math
+import numpy
 
 from pyglet.window import key, mouse
 from app.classes.animation import Animation
 from app.libs.json_map import Map
 from app.pythomas import pythomas as lib
+from app.classes.windows.main_window import BaseWindow
 #
 #
 # def get_decomposed_direction_using_slope(distance, slope):
@@ -139,24 +141,28 @@ from app.pythomas import pythomas as lib
 
 
 
-window = pyglet.window.Window(caption="PyThomas",
-                              fullscreen=False,
+window_parameters = dict(caption="PyThomas",
+                              fullscreen=True,
                               resizable=False,
                               visible=False)
+window = BaseWindow("Basic Render Test", window_parameters)
 
 # load the map
 fd = pyglet.resource.file("test.json", 'rt')
 print("{0}".format(fd))
 m = Map.load_json(fd)
 animation = Animation("walk.png", 8, 8, start_rotation=-math.pi)
+image = pyglet.resource.image('cat.jpeg')
 
 # set the viewport to the window dimensions
-window.set_size(m.p_width, m.p_height)
-m.set_viewport(0, 0, m.p_width, m.p_height)
+if not window.fullscreen:
+    window.set_size(m.p_width, m.p_height)
+    m.set_viewport(0, 0, m.p_width, m.p_height)
 window.set_visible(True)
 
-window.set_size(400, 300)
-window.set_size(m.p_width, m.p_height)
+if not window.fullscreen:
+    window.set_size(400, 300)
+    window.set_size(m.p_width, m.p_height)
 
 
 dims = [(m.p_width, m.p_height),
@@ -207,27 +213,12 @@ def on_draw():
 
     m.draw()
     batch = pyglet.graphics.Batch()
+
+    image.blit(0, 0)
     animation.draw()
 
-    def draw_rectangle(x, y, width, height):
-        points = [x, y, x+width, y, x+width, y+height, x, y+height]
-        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', points))
-    draw_rectangle(x=50, y=100, width=200, height=50)
-
-    def draw_diagonal_rectangle(start_point, end_point, radius):
-        x1 = start_point[0]
-        y1 = start_point[1]
-        x2 = end_point[0]
-        y2 = end_point[1]
-        slope = (y2-y1)/(x2-x1)
-
-        tilt_dimensions = get_decomposed_direction_using_slope(radius, slope)
-
-        # tilt_width = width/2 / slope_inv
-
-        # points = [100, 100, 250, 250, 500, 400, 150, 300]
-        # pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', points))
-    draw_diagonal_rectangle((100, 100), (300, 300), 10)
+    lib.PygletLib.draw_rectangle(x=50, y=100, width=200, height=50)
+    lib.PygletLib.draw_diagonal_rectangle((100, 100), (300, 300), 10)
 
     batch.draw()
 
@@ -245,7 +236,7 @@ def on_resize(width, height):
 @window.event
 def on_key_press(symbol, modifiers):
     if symbol == key.F:
-        window.set_fullscreen(window.fullscreen)
+        window.set_fullscreen(not window.fullscreen)
     if symbol == key.T:
         window.set_size(400, 300)
         window.set_size(m.p_width, m.p_height)

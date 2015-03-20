@@ -14,12 +14,14 @@ class Animation():
                  start_pos=(1, 1),
                  position_offset=(0.0, 0.0),
                  start_rotation=0.0,
-                 speed=200):
+                 speed=200,
+                 start_state=State.Idle):
         if rows < 1 or columns < 1:
             Exception("Animation initialized with negative or zero-dimension. ({0}x{1})"
                       .format(rows, columns))
-        self.bin = pyglet.image.atlas.TextureBin()
-        self.spritesheet = pyglet.image.load(resource)
+        self.state = start_state
+        self.texture_bin = pyglet.image.atlas.TextureBin()
+        self.spritesheet = resource
         self.image_grid = pyglet.image.ImageGrid(self.spritesheet, rows, columns)
 
         self.position_offset = position_offset
@@ -51,10 +53,15 @@ class Animation():
         self.current_animation = self.animations[0]
         self.sprite = self.sprites[0]
 
+    def set_state(self, state):
+        if state != self.state:
+            self.state = state
 
-    def set_target_position(self, new_position):
+    def set_target_position(self, new_position, set_to_move=True):
         print("New target position: {0}".format(new_position))
         self.target_position = new_position
+        if set_to_move:
+            self.set_state(self.State.Move)
 
     def set_speed(self, new_speed):
         self.speed = new_speed
@@ -91,6 +98,9 @@ class Animation():
         else:
             return self.previous_move
 
+    def get_forward_angle(self):
+        return self.current_angle
+
     def move(self, distance):
         if self.target_position is None:
             return 0, 0
@@ -99,7 +109,6 @@ class Animation():
                                                   self.current_position,
                                                   self.target_position,
                                                   stop_at_target=True)
-        self.set_position(new_position)
 
         def update_angle():
             target_dx, target_dy = self.get_relative_target_vector()
@@ -111,7 +120,7 @@ class Animation():
             delta_y = new_position[1] - self.current_position[1]
             return delta_x, delta_y
         self.previous_move = calc_move_distance()
-
+        self.set_position(new_position)
         return self.get_previous_move()
 
     def get_relative_target_vector(self):

@@ -23,6 +23,7 @@ class Configurations():
             self.default_fraction_of_screen = 1/2
             self.default_width = 560
             self.default_height = 434
+            self.desired_fps = 60.0
 
     class World():
         def __init__(self):
