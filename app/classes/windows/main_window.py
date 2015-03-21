@@ -5,6 +5,7 @@ from pyglet.window import key, mouse
 from app.config import config
 from app.pythomas import pythomas as lib
 from app.classes.animation import Animation
+from app.classes.navigation_graph import NavigationGraph, Node
 from app.pythomas.pythomas import PygletLib as Plib
 
 
@@ -41,6 +42,8 @@ class BaseWindow:
         # super(BaseWindow, self).__init__(**window_parameters)
         self.window = pyglet.window.Window(**window_parameters)
         self.window_name = window_name
+        self.pressed_keys = key.KeyStateHandler()
+        self.window.push_handlers(self.pressed_keys)
 
     def update(self, dt):
         pass
@@ -82,7 +85,7 @@ class MainWindow(BaseWindow):
     def __init__(self):
         super(MainWindow, self).__init__("Main window")
         # self.push_handlers()
-
+        self.nav_graph = NavigationGraph()
         # Create content
         self.text_label = pyglet.text.Label('Hello, world. Press F!',
                                             font_name='Times New Roman',
@@ -106,15 +109,18 @@ class MainWindow(BaseWindow):
     def on_draw(self):
         self.window.clear()
         self.background_image.blit(0, 0)
-        print("Printing label ({0})".format((self.text_label.height, self.text_label.width,
-                                             self.text_label.x, self.text_label.y)))
+
+        def draw_graph():
+            nav_batch = pyglet.graphics.Batch()
+            self.nav_graph.draw(nav_batch)
+            nav_batch.draw()
+        draw_graph()
         self.text_label.draw()
         self.animation.draw()
-        lib.PygletLib.draw_rectangle(x=50, y=100, width=200, height=50)
-        lib.PygletLib.draw_diagonal_rectangle((100, 100), (300, 300), 10)
+        # lib.PygletLib.draw_rectangle(x=50, y=100, width=200, height=50)
+        # lib.PygletLib.draw_diagonal_rectangle((100, 100), (300, 300), 10)
 
     def on_key_press(self, symbol, modifiers):
-        print("Symbol: {0}".format(symbol))
         pass
         # text = 'A key was pressed'
         # if symbol == key.F:
@@ -128,7 +134,9 @@ class MainWindow(BaseWindow):
         # self.text_label.text = text
 
     def on_mouse_press(self, x, y, button, modifiers):
-        # if button == mouse.LEFT:
+        if button == mouse.LEFT:
+            if Plib.is_ctrl_pressed(self.pressed_keys):
+                self.nav_graph.add_node(Node(x, y))
         #     self.text_label.text = 'The left mouse button was pressed {0},{1}.'.format(x, y)
         if button == mouse.RIGHT:
             self.animation.set_target_position((x, y))
@@ -139,30 +147,3 @@ class MainWindow(BaseWindow):
         self.background_image.width = width
         self.background_image.height = height
         pass
-        # if self.visible:
-        #     self.fit_label(self.text_label, width, height)
-
-    # def fit_label(self, label, x=0.0, y=0.0, width=None, height=None):
-    #     self.text_label.width = 150
-    #     self.text_label.height = 40
-    #     self.text_label.x = 200
-    #     self.text_label.y = 50
-    #     return
-    #     if width is None:
-    #         width = self.width
-    #     if height is None:
-    #         height = self.height
-    #     target_width = width * 0.9
-    #     target_height = height * 0.5
-    #
-    #     def update_label_position():
-    #         label.begin_update()
-    #         width_ratio = target_width / label.content_width
-    #         height_ratio = target_height / label.content_height
-    #         if width_ratio < height_ratio:
-    #             label.font_size *= width_ratio
-    #         else:
-    #             label.font_size *= height_ratio
-    #         label.x, label.y = map(lambda dim, pos: dim/2+pos, [width, height], [x, y])
-    #         label.end_update()
-    #     update_label_position()

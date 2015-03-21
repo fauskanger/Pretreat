@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from app.config import config
+from app.config import config, Colors
 
 
 # pyglet-specific library
@@ -10,12 +10,24 @@ class PygletLib:
         return modifiers & (key.LSHIFT | key.RSHIFT)
 
     @staticmethod
+    def is_shift_pressed(pressed_keys):
+        return pressed_keys[key.LSHIFT] or pressed_keys[key.RSHIFT]
+
+    @staticmethod
     def is_ctrl(modifiers):
         return modifiers & (key.LCTRL | key.RCTRL)
 
     @staticmethod
+    def is_ctrl_pressed(pressed_keys):
+        return pressed_keys[key.LCTRL] or pressed_keys[key.RCTRL]
+
+    @staticmethod
     def is_alt(modifiers):
         return modifiers & (key.LALT | key.RALT)
+
+    @staticmethod
+    def is_alt_pressed(pressed_keys):
+        return pressed_keys[key.LALT] or pressed_keys[key.RALT]
 
     @staticmethod
     def toggle_fullscreen(window):
@@ -45,9 +57,9 @@ class PygletLib:
         width = math.sqrt(a*a + b*b)
         height = radius
         colors = [ (255, 000, 000),
-                   (255, 000, 000),
+                   (255, 255, 000),
                    (000, 255, 000),
-                   (000, 255, 000), ]
+                   (000, 255, 255), ]
         colors_list = flatten_list_of_tuples(colors)
 
         center = get_middle(start_point, end_point)
@@ -58,6 +70,21 @@ class PygletLib:
             rotated_p = rotate_point_around_point(p, center, theta)
             rotated_rectangle_points.extend(rotated_p)
         pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', rotated_rectangle_points), ('c3B', colors_list))
+
+
+def get_circle_points(center=(0.0, 0.0), radius=1.0, number_of_points=32, include_center=False, repeat=True):
+    points_list = []
+    for i in range(number_of_points):
+        a = 2.0*math.pi*float(i)/number_of_points
+        points_list.append(center[0]+radius*math.sin(a))
+        points_list.append(center[1]+radius*math.cos(a))
+    if include_center and repeat:
+        points_list.append(points_list[0])
+        points_list.append(points_list[1])
+    if include_center:
+        points_list.insert(0, center[0])
+        points_list.insert(1, center[1])
+    return points_list
 
 
 def flatten_list_of_tuples(list_of_tuples):
@@ -95,6 +122,7 @@ def get_point_in_direction(distance, start_position, point_in_direction, stop_at
         rv_x *= -1
     if p[1] > q[1]:
         rv_y *= -1
+    # Added for readability, the vector is the equivalent of solving the problem at origo
     relative_vector = rv_x, rv_y
     new_point = start_position[0] + relative_vector[0], start_position[1] + relative_vector[1]
     if stop_at_target and abs(p[0]-q[0]) < abs(p[0]-new_point[0]):
@@ -136,6 +164,9 @@ def get_middle(point_a, point_b):
     x = point_a[0] + (point_a[0]-point_a[1])/2
     y = point_b[0] + (point_b[0]-point_b[1])/2
     return x, y
+
+colors = Colors()
+
 
 import pyglet
 from pyglet.window import key

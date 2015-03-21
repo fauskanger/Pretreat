@@ -1,3 +1,21 @@
+class Colors():
+    def __init__(self):
+        self.white = (255, 255, 255)
+        self.red = (255, 0, 0)
+        self.green = (0, 255, 0)
+        self.blue = (0, 0, 255)
+        self.cyan = (0, 255, 255)
+        self.magenta = (255, 0, 255)
+        self.yellow = (255, 255, 0)
+        self.black = (0, 0, 0)
+
+    @staticmethod
+    def half_color(color):
+        def half(color_value):
+            return int(color_value/2)
+        return tuple(half(cv) for cv in color)
+
+
 class Configurations():
 
     class Strings():
@@ -45,6 +63,11 @@ class Configurations():
             self.max_degree = 2
             self.base_edge_chance = 1
             self.number_of_edge_types = 5
+
+            self.color_mode = 'c3B'
+            self.default_node_color = (255, 255, 255)
+            self.default_node_radius = 20
+            self.default_node_order_index = 1
 
             self.default_rand_seed = 13
 

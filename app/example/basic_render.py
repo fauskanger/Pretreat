@@ -146,12 +146,17 @@ window_parameters = dict(caption="PyThomas",
                               resizable=False,
                               visible=False)
 window = BaseWindow("Basic Render Test", window_parameters)
+window = window.window
+
+my_color_half_color = lib.colors.half_color(lib.colors.yellow)
+print("My half color: {0} <<--".format(my_color_half_color))
 
 # load the map
 fd = pyglet.resource.file("test.json", 'rt')
 print("{0}".format(fd))
 m = Map.load_json(fd)
-animation = Animation("walk.png", 8, 8, start_rotation=-math.pi)
+animation_resource = pyglet.resource.image("walk.png")
+animation = Animation(animation_resource, 8, 8, start_rotation=-math.pi)
 image = pyglet.resource.image('cat.jpeg')
 
 # set the viewport to the window dimensions
