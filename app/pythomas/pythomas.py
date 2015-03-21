@@ -3,73 +3,11 @@ import math
 from app.config import config, Colors
 
 
-# pyglet-specific library
-class PygletLib:
-    @staticmethod
-    def is_shift(modifiers):
-        return modifiers & (key.LSHIFT | key.RSHIFT)
-
-    @staticmethod
-    def is_shift_pressed(pressed_keys):
-        return pressed_keys[key.LSHIFT] or pressed_keys[key.RSHIFT]
-
-    @staticmethod
-    def is_ctrl(modifiers):
-        return modifiers & (key.LCTRL | key.RCTRL)
-
-    @staticmethod
-    def is_ctrl_pressed(pressed_keys):
-        return pressed_keys[key.LCTRL] or pressed_keys[key.RCTRL]
-
-    @staticmethod
-    def is_alt(modifiers):
-        return modifiers & (key.LALT | key.RALT)
-
-    @staticmethod
-    def is_alt_pressed(pressed_keys):
-        return pressed_keys[key.LALT] or pressed_keys[key.RALT]
-
-    @staticmethod
-    def toggle_fullscreen(window):
-        window.set_fullscreen(not window.fullscreen)
-
-    @staticmethod
-    def draw_rectangle(x, y, width, height):
-        points = []
-        p1 = x, y
-        p2 = x+width, y
-        p3 = x+width, y+height
-        p4 = x, y+height
-        tuple_list = [p1, p2, p3, p4]
-        for coordinate in tuple_list:
-            points.extend(coordinate)
-        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', points))
-
-    @staticmethod
-    def draw_diagonal_rectangle(start_point, end_point, radius):
-        x1 = start_point[0]
-        y1 = start_point[1]
-        x2 = end_point[0]
-        y2 = end_point[1]
-
-        a = abs(x2-x1)
-        b = abs(y2-y1)
-        width = math.sqrt(a*a + b*b)
-        height = radius
-        colors = [ (255, 000, 000),
-                   (255, 255, 000),
-                   (000, 255, 000),
-                   (000, 255, 255), ]
-        colors_list = flatten_list_of_tuples(colors)
-
-        center = get_middle(start_point, end_point)
-        rectangle_points = get_rectangle_on_point(center, width, height)
-        theta = math.atan2(y2-y1, x2-x1)
-        rotated_rectangle_points = []
-        for p in rectangle_points:
-            rotated_p = rotate_point_around_point(p, center, theta)
-            rotated_rectangle_points.extend(rotated_p)
-        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', rotated_rectangle_points), ('c3B', colors_list))
+def for_each_node_in(graph, lambda_method, is_reading_data=False):
+    for node in graph.nodes(data=is_reading_data):
+        if is_reading_data:
+            node = node[0]
+        lambda_method(node)
 
 
 def get_circle_points(center=(0.0, 0.0), radius=1.0, number_of_points=32, include_center=False, repeat=True):
@@ -172,13 +110,70 @@ import pyglet
 from pyglet.window import key
 
 
-class PyThomas():
+# pyglet-specific library
+class PygletLib:
+    @staticmethod
+    def is_shift(modifiers):
+        return modifiers & (key.LSHIFT | key.RSHIFT)
 
     @staticmethod
-    def for_each_node_in(graph, lambda_method, is_reading_data=False):
-        for node in graph.nodes(data=is_reading_data):
-            if is_reading_data:
-                node = node[0]
-            lambda_method(node)
+    def is_shift_pressed(pressed_keys):
+        return pressed_keys[key.LSHIFT] or pressed_keys[key.RSHIFT]
 
-pythomas = PyThomas()
+    @staticmethod
+    def is_ctrl(modifiers):
+        return modifiers & (key.LCTRL | key.RCTRL)
+
+    @staticmethod
+    def is_ctrl_pressed(pressed_keys):
+        return pressed_keys[key.LCTRL] or pressed_keys[key.RCTRL]
+
+    @staticmethod
+    def is_alt(modifiers):
+        return modifiers & (key.LALT | key.RALT)
+
+    @staticmethod
+    def is_alt_pressed(pressed_keys):
+        return pressed_keys[key.LALT] or pressed_keys[key.RALT]
+
+    @staticmethod
+    def toggle_fullscreen(window):
+        window.set_fullscreen(not window.fullscreen)
+
+    @staticmethod
+    def draw_rectangle(x, y, width, height):
+        points = []
+        p1 = x, y
+        p2 = x+width, y
+        p3 = x+width, y+height
+        p4 = x, y+height
+        tuple_list = [p1, p2, p3, p4]
+        for coordinate in tuple_list:
+            points.extend(coordinate)
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', points))
+
+    @staticmethod
+    def draw_diagonal_rectangle(start_point, end_point, radius):
+        x1 = start_point[0]
+        y1 = start_point[1]
+        x2 = end_point[0]
+        y2 = end_point[1]
+
+        a = abs(x2-x1)
+        b = abs(y2-y1)
+        width = math.sqrt(a*a + b*b)
+        height = radius
+        colors = [ (255, 000, 000),
+                   (255, 255, 000),
+                   (000, 255, 000),
+                   (000, 255, 255), ]
+        colors_list = flatten_list_of_tuples(colors)
+
+        center = get_middle(start_point, end_point)
+        rectangle_points = get_rectangle_on_point(center, width, height)
+        theta = math.atan2(y2-y1, x2-x1)
+        rotated_rectangle_points = []
+        for p in rectangle_points:
+            rotated_p = rotate_point_around_point(p, center, theta)
+            rotated_rectangle_points.extend(rotated_p)
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', rotated_rectangle_points), ('c3B', colors_list))
