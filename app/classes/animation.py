@@ -67,9 +67,10 @@ class Animation():
         self.speed = new_speed
 
     def update(self, dt):
-        distance = dt * self.speed
-        movement = self.move(distance)
-        self.update_sprite(movement)
+        if self.state == self.State.Move:
+            distance = dt * self.speed
+            movement = self.move(distance)
+            self.update_sprite(movement)
 
     def get_animation_index(self):
         pi2 = 2 * math.pi

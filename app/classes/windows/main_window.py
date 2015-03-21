@@ -122,26 +122,18 @@ class MainWindow(BaseWindow):
 
     def on_key_press(self, symbol, modifiers):
         pass
-        # text = 'A key was pressed'
-        # if symbol == key.F:
-        #     Plib.toggle_fullscreen(self)
-        # if symbol == key.A and modifiers & key.LSHIFT:
-        #     text = 'The "A+LSHIFT" key was pressed.'
-        # elif symbol == key.LEFT:
-        #     text = 'The left arrow key was pressed.'
-        # elif symbol == key.ENTER:
-        #     text = 'The enter key was pressed.'
-        # self.text_label.text = text
+
+    def on_key_release(self, symbol, modifiers):
+        print("Symbol released: {0}".format(symbol))
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == mouse.LEFT:
             if Plib.is_ctrl_pressed(self.pressed_keys):
-                self.nav_graph.add_node(Node(x, y))
-        #     self.text_label.text = 'The left mouse button was pressed {0},{1}.'.format(x, y)
+                self.nav_graph.select_node_at_position((x, y))
+            if Plib.is_alt_pressed(self.pressed_keys):
+                self.nav_graph.deselect_node_at_position((x, y))
         if button == mouse.RIGHT:
-            self.animation.set_target_position((x, y))
-        # if button == mouse.MIDDLE:
-        #     self.text_label.text = 'The middle mouse button was pressed {0},{1}.'.format(x, y)
+            self.nav_graph.add_node(Node(x, y))
 
     def on_resize(self, width, height):
         self.background_image.width = width

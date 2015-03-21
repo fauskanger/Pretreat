@@ -1,5 +1,6 @@
 import pyglet
 from enum import Enum
+from app.classes.animation import Animation
 
 from app.config import config, global_string_values as strings
 from app.pythomas.pythomas import PygletLib as Plib
@@ -11,6 +12,12 @@ class Trip:
     def __init__(self, path, cost):
         self.path = path
         self.cost = cost
+
+    def get_start(self):
+        return self.path[0]
+
+    def get_destination(self):
+        return self.path[-1]
 
 
 class Agent:
@@ -49,13 +56,23 @@ class Agent:
                 self.set_target_node(path_nodes[1])
                 self.set_travel_state(self.TravelState.On_Start)
             else:
-                self.set_target_node(None)
+                self.set_target_node(self.current_node)
                 self.set_travel_state(self.TravelState.On_Target)
+
+    def set_animation_move(self, set_to_move=True):
+        if set_to_move:
+            self.animation.set_state(Animation.State.Move)
+        else:
+            self.animation.set_state(Animation.State.Idle)
 
     def set_state(self, state):
         self.state = state
         if state == self.State.Running:
-            pass
+            self.set_animation_move(set_to_move=True)
+        if state == self.State.Idle:
+            self.set_animation_move(set_to_move=False)
+        if state == self.State.Complete:
+            self.set_animation_move(set_to_move=False)
 
     def set_travel_state(self, travel_state):
         self.travel_state = travel_state
@@ -67,7 +84,6 @@ class Agent:
         self.animation.set_target_position(target_node.get_position(), set_to_move=False)
         if set_to_run and self.state != self.State.Running:
             self.set_state(self.State.Running)
-
 
     def set_current_node(self, node):
         self.current_node = node

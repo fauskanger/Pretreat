@@ -29,6 +29,9 @@ class Node:
     def set_radius(self, new_radius):
         self.current_radius = new_radius
 
+    def get_radius(self):
+        return self.current_radius
+
     def get_position(self):
         return self.x, self.y
 
@@ -65,16 +68,45 @@ class Node:
 class NavigationGraph:
     def __init__(self):
         self.graph = nx.DiGraph()
+        self.selected_nodes = []
+        self.selected_nodes_shapes = []
         # self.nodes = []
 
     @staticmethod
-    def get_distance(from_node, to_node):
+    def get_node_distance(from_node, to_node):
         x = abs(from_node.x-to_node.x)
         y = abs(from_node.y-to_node.y)
         return math.sqrt(x*x + y*y)
 
+    def get_node_from_position(self, position):
+        for node in self.graph.nodes():
+            if lib.get_point_distance(position, node.get_position()) < node.get_radius():
+                return node
+        return None
+
+    def select_node_at_position(self, position):
+        node = self.get_node_from_position(position)
+        if node is None:
+            return None
+        if node not in self.selected_nodes:
+            self.selected_nodes.append(node)
+        return node
+
+    def deselect_node_at_position(self, position):
+        node = self.get_node_from_position(position)
+        if node is None:
+            return None
+        try:
+            self.selected_nodes.remove(node)
+        except ValueError:
+            pass
+        return node
+
+    def deselect_all_nodes(self):
+        self.selected_nodes = []
+
     def get_edge_cost(self, from_node, to_node):
-        return self.get_distance(from_node, to_node)
+        return self.get_node_distance(from_node, to_node)
 
     def add_node(self, node):
         if node is None:
@@ -90,13 +122,25 @@ class NavigationGraph:
                 return True
         return False
 
+    # TODO: batched rendering of primitives
     def draw(self, batch=None):
+        def draw_selection():
+            for node in self.selected_nodes:
+                shape = lib.Circle(node.get_position(), node.get_radius()+5)
+                shape.draw()
+            pass
+        draw_selection()
+
         def draw_nodes():
             is_reading_data = True
             for node in self.graph.nodes(data=is_reading_data):
                 node_instance = node
                 if is_reading_data:
                     node_instance = node[0]
+                # node_instance.draw(batch)
                 node_instance.draw()
         draw_nodes()
+
+    def update(self, dt):
+        pass
 

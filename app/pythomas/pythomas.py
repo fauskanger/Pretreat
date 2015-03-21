@@ -98,6 +98,12 @@ def rotate_point_around_point(point, axis_point, radians_theta):
     return x_new, y_new
 
 
+def get_point_distance(from_point, to_point):
+    x = abs(from_point[0]-to_point[0])
+    y = abs(from_point[1]-to_point[1])
+    return math.sqrt(x*x + y*y)
+
+
 def get_middle(point_a, point_b):
     x = point_a[0] + (point_a[0]-point_a[1])/2
     y = point_b[0] + (point_b[0]-point_b[1])/2
@@ -110,8 +116,66 @@ import pyglet
 from pyglet.window import key
 
 
+class Shape(object):
+    def __init__(self, position, color=colors.white):
+        self.x = int(position[0])
+        self.y = int(position[1])
+        self.vertex_list = None
+        self.draw_points_list = None  # self.create_draw_points()
+        self.vertex_list = None  # self.create_vertex_list()
+        self.color = color
+
+    def update_draw_points(self):
+        self.draw_points_list = self.create_draw_points()
+
+    def create_draw_points(self):
+        return None
+
+    def get_position(self):
+        return self.x, self.y
+
+    def create_vertex_list(self):
+        if self.draw_points_list is None:
+            return None
+        number_of_vertices = int(len(self.draw_points_list)/2)
+        vertex_list = pyglet.graphics.vertex_list(number_of_vertices, 'v2f', config.world.color_mode)
+        vertex_list.vertices = self.draw_points_list
+        vertex_list.colors = self.color*number_of_vertices
+        return vertex_list
+
+    def update_vertex_list_points(self):
+        self.vertex_list = self.create_vertex_list()
+
+    def draw(self, batch=None):
+        if self.vertex_list is None:
+            return
+        mode = pyglet.gl.GL_TRIANGLE_FAN
+        if self.vertex_list is None:
+            self.update_vertex_list_points()
+        if batch is None:
+            # pyglet.graphics.draw(self.vertex_list.get_size(), mode, self.vertex_list)
+            self.vertex_list.draw(mode)
+        else:
+            batch.add(self.vertex_list.get_size(), mode, None,
+                      ('v2f', self.vertex_list.vertices),
+                      (config.world.color_mode, self.vertex_list.colors))
+
+
+class Circle(Shape):
+    def __init__(self, position, radius):
+        Shape.__init__(self, position)
+        self.radius = radius
+        self.draw_points_list = self.create_draw_points()
+        self.vertex_list = self.create_vertex_list()
+
+    def create_draw_points(self):
+        return get_circle_points(center=(self.x, self.y), radius=self.radius, include_center=True)
+
 # pyglet-specific library
 class PygletLib:
+
+
+
     @staticmethod
     def is_shift(modifiers):
         return modifiers & (key.LSHIFT | key.RSHIFT)
