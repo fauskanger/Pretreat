@@ -7,27 +7,21 @@ from app.config import config, global_string_values as strings
 
 class Node:
     def __init__(self, x, y, altitude=0, content=None):
-        self.current_radius = config.world.default_node_radius
-        self.default_color = config.world.default_node_color
+        self.current_radius = config.world.node_radius
+        self.default_color = config.world.node_color
         self.current_color = self.default_color
         self.x = int(x)
         self.y = int(y)
         self.label = "{0},{1}".format(x, y)
         self.altitude = altitude
         self.content = content
-        self.batch_group = pyglet.graphics.OrderedGroup(config.world.default_node_order_index)
-        self.draw_points_list = self.create_draw_points()
-        self.vertex_list = self.create_vertex_list()
+        self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
         self.printed = False
-
-    def update_draw_points(self):
-        self.draw_points_list = self.create_draw_points()
-
-    def create_draw_points(self):
-        return lib.get_circle_points(center=(self.x, self.y), radius=self.current_radius, include_center=True)
+        self.circle = lib.Circle((x, y), self.current_radius, self.current_color)
 
     def set_radius(self, new_radius):
         self.current_radius = new_radius
+        self.circle.radius = self.current_radius
 
     def get_radius(self):
         return self.current_radius
@@ -35,31 +29,10 @@ class Node:
     def get_position(self):
         return self.x, self.y
 
-    def create_vertex_list(self):
-        number_of_vertices = int(len(self.draw_points_list)/2)
-        vertex_list = pyglet.graphics.vertex_list(number_of_vertices, 'v2f', config.world.color_mode)
-        vertex_list.vertices = self.draw_points_list
-        vertex_list.colors = self.current_color*number_of_vertices
-        return vertex_list
-
-    def update_vertex_list_points(self):
-        self.vertex_list = self.create_vertex_list()
-
-    def draw(self, batch=None):
-        mode = pyglet.gl.GL_TRIANGLE_FAN
-        if self.vertex_list is None:
-            self.update_vertex_list_points()
-        if batch is None:
-            # pyglet.graphics.draw(self.vertex_list.get_size(), mode, self.vertex_list)
-            self.vertex_list.draw(mode)
-        else:
-            if not self.printed:
-                # print("Draw_points_list ({0}):\n {1}".format(len(self.draw_points_list), self.draw_points_list))
-                # print("Node Colors: {0}\n{1}\n{2}\n{3}\n{4}".format(*draw_arguments))
-                self.printed = True
-            batch.add(self.vertex_list.get_size(), mode, None,
-                      ('v2f', self.vertex_list.vertices),
-                      (config.world.color_mode, self.vertex_list.colors))
+    def draw(self, radius_offset=0.0, batch=None):
+        self.circle.expand_radius(-radius_offset)
+        self.circle.draw(batch)
+        self.circle.expand_radius(radius_offset)
 
     def update(self, dt):
         pass
@@ -84,23 +57,31 @@ class NavigationGraph:
                 return node
         return None
 
+    
+
+    def select_node(self, node):
+        if node is None or node in self.selected_nodes:
+            return False
+        self.selected_nodes.append(node)
+        return True
+
+    def deselect_node(self, node):
+        if node is None or node not in self.selected_nodes:
+            return False
+        self.selected_nodes.remove(node)
+        return True
+
     def select_node_at_position(self, position):
         node = self.get_node_from_position(position)
-        if node is None:
-            return None
-        if node not in self.selected_nodes:
-            self.selected_nodes.append(node)
-        return node
+        if node is not None:
+            if not self.select_node(node):
+                self.deselect_node(node)
 
     def deselect_node_at_position(self, position):
         node = self.get_node_from_position(position)
-        if node is None:
-            return None
-        try:
-            self.selected_nodes.remove(node)
-        except ValueError:
-            pass
-        return node
+        if node is not None:
+            if not self.deselect_node(node):
+                self.select_node(node)
 
     def deselect_all_nodes(self):
         self.selected_nodes = []
@@ -126,8 +107,9 @@ class NavigationGraph:
     def draw(self, batch=None):
         def draw_selection():
             for node in self.selected_nodes:
-                shape = lib.Circle(node.get_position(), node.get_radius()+5)
-                shape.draw()
+                color = config.world.selected_node_color
+                circle = lib.Circle(position=node.get_position(), radius=node.get_radius()+4, color=color)
+                circle.draw()
             pass
         draw_selection()
 
@@ -138,7 +120,10 @@ class NavigationGraph:
                 if is_reading_data:
                     node_instance = node[0]
                 # node_instance.draw(batch)
-                node_instance.draw()
+                if node in self.selected_nodes:
+                    node_instance.draw(radius_offset=config.world.selected_radius_decrease)
+                else:
+                    node_instance.draw()
         draw_nodes()
 
     def update(self, dt):

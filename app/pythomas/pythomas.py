@@ -134,6 +134,9 @@ class Shape(object):
     def get_position(self):
         return self.x, self.y
 
+    def set_color(self, color):
+        self.color = color
+
     def create_vertex_list(self):
         if self.draw_points_list is None:
             return None
@@ -145,6 +148,10 @@ class Shape(object):
 
     def update_vertex_list_points(self):
         self.vertex_list = self.create_vertex_list()
+
+    def update_shape(self):
+        self.update_draw_points()
+        self.update_vertex_list_points()
 
     def draw(self, batch=None):
         if self.vertex_list is None:
@@ -162,14 +169,23 @@ class Shape(object):
 
 
 class Circle(Shape):
-    def __init__(self, position, radius):
-        Shape.__init__(self, position)
+    def __init__(self, position, radius, color):
+        Shape.__init__(self, position, color)
         self.radius = radius
         self.draw_points_list = self.create_draw_points()
         self.vertex_list = self.create_vertex_list()
 
     def create_draw_points(self):
         return get_circle_points(center=(self.x, self.y), radius=self.radius, include_center=True)
+
+    def set_radius(self, radius):
+        if radius >= 0.0 and radius != self.radius:
+            self.radius = radius
+            self.update_shape()
+
+    def expand_radius(self, value):
+        if -value < self.radius:
+            self.set_radius(self.radius+value)
 
 # pyglet-specific library
 class PygletLib:
