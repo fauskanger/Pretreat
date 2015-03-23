@@ -105,9 +105,13 @@ def get_point_distance(from_point, to_point):
 
 
 def get_middle(point_a, point_b):
-    x = point_a[0] + (point_a[0]-point_a[1])/2
-    y = point_b[0] + (point_b[0]-point_b[1])/2
+    x = (point_a[0]+point_b[0])/2
+    y = (point_a[1]+point_b[1])/2
     return x, y
+
+
+def sum_points(p, q):
+    return p[0]+q[0], p[1]+q[1]
 
 colors = Colors()
 
@@ -117,13 +121,19 @@ from pyglet.window import key
 
 
 class Shape(object):
-    def __init__(self, position, color=colors.white):
+    def __init__(self, position, color=colors.white, mode=pyglet.gl.GL_POLYGON):
         self.x = int(position[0])
         self.y = int(position[1])
         self.vertex_list = None
         self.draw_points_list = None  # self.create_draw_points()
         self.vertex_list = None  # self.create_vertex_list()
         self.color = color
+        self.mode = mode
+
+    def set_position(self, new_position):
+        self.x = int(new_position[0])
+        self.y = int(new_position[1])
+        self.update_shape()
 
     def update_draw_points(self):
         self.draw_points_list = self.create_draw_points()
@@ -156,24 +166,22 @@ class Shape(object):
     def draw(self, batch=None):
         if self.vertex_list is None:
             return
-        mode = pyglet.gl.GL_TRIANGLE_FAN
         if self.vertex_list is None:
             self.update_vertex_list_points()
         if batch is None:
             # pyglet.graphics.draw(self.vertex_list.get_size(), mode, self.vertex_list)
-            self.vertex_list.draw(mode)
+            self.vertex_list.draw(self.mode)
         else:
-            batch.add(self.vertex_list.get_size(), mode, None,
+            batch.add(self.vertex_list.get_size(), self.mode, None,
                       ('v2f', self.vertex_list.vertices),
                       (config.world.color_mode, self.vertex_list.colors))
 
 
 class Circle(Shape):
     def __init__(self, position, radius, color):
-        Shape.__init__(self, position, color)
+        Shape.__init__(self, position, color, mode=pyglet.gl.GL_TRIANGLE_FAN)
         self.radius = radius
-        self.draw_points_list = self.create_draw_points()
-        self.vertex_list = self.create_vertex_list()
+        self.update_shape()
 
     def create_draw_points(self):
         return get_circle_points(center=(self.x, self.y), radius=self.radius, include_center=True)
@@ -184,8 +192,44 @@ class Circle(Shape):
             self.update_shape()
 
     def expand_radius(self, value):
-        if -value < self.radius:
+        if -value < self.radius and value != 0.0:
             self.set_radius(self.radius+value)
+
+
+class Rectangle(Shape):
+    def __init__(self, start_point, end_point, radius, colors_list=None):
+        Shape.__init__(self, get_middle(start_point, end_point), mode=pyglet.gl.GL_QUADS)
+        x1 = start_point[0]
+        y1 = start_point[1]
+        x2 = end_point[0]
+        y2 = end_point[1]
+
+        a = abs(x2-x1)
+        b = abs(y2-y1)
+        self.start_point = start_point
+        self.end_point = end_point
+        self.width = math.sqrt(a*a + b*b)
+        self.height = radius
+        if colors_list is None:
+            color = [(255, 255, 255) * 4]
+            colors_list = flatten_list_of_tuples(color)
+        self.colors_list = colors_list
+        self.update_shape()
+
+    def create_draw_points(self):
+        # center = get_middle(start_point, end_point)
+        rectangle_points = get_rectangle_on_point(self.get_position(), self.width, self.height)
+        x1 = self.start_point[0]
+        y1 = self.start_point[1]
+        x2 = self.end_point[0]
+        y2 = self.end_point[1]
+        theta = math.atan2(y2-y1, x2-x1)
+        rotated_rectangle_points = []
+        for p in rectangle_points:
+            rotated_p = rotate_point_around_point(p, self.get_position(), theta)
+            rotated_rectangle_points.extend(rotated_p)
+        return rotated_rectangle_points
+
 
 # pyglet-specific library
 class PygletLib:
@@ -232,28 +276,26 @@ class PygletLib:
             points.extend(coordinate)
         pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', points))
 
-    @staticmethod
-    def draw_diagonal_rectangle(start_point, end_point, radius):
-        x1 = start_point[0]
-        y1 = start_point[1]
-        x2 = end_point[0]
-        y2 = end_point[1]
-
-        a = abs(x2-x1)
-        b = abs(y2-y1)
-        width = math.sqrt(a*a + b*b)
-        height = radius
-        colors = [ (255, 000, 000),
-                   (255, 255, 000),
-                   (000, 255, 000),
-                   (000, 255, 255), ]
-        colors_list = flatten_list_of_tuples(colors)
-
-        center = get_middle(start_point, end_point)
-        rectangle_points = get_rectangle_on_point(center, width, height)
-        theta = math.atan2(y2-y1, x2-x1)
-        rotated_rectangle_points = []
-        for p in rectangle_points:
-            rotated_p = rotate_point_around_point(p, center, theta)
-            rotated_rectangle_points.extend(rotated_p)
-        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', rotated_rectangle_points), ('c3B', colors_list))
+    # @staticmethod
+    # def draw_diagonal_rectangle(start_point, end_point, radius, colors_list=None):
+    #     x1 = start_point[0]
+    #     y1 = start_point[1]
+    #     x2 = end_point[0]
+    #     y2 = end_point[1]
+    #
+    #     a = abs(x2-x1)
+    #     b = abs(y2-y1)
+    #     width = math.sqrt(a*a + b*b)
+    #     height = radius
+    #     if colors_list is None:
+    #         color = [(255, 255, 255) * 4]
+    #         colors_list = flatten_list_of_tuples(color)
+    #
+    #     center = get_middle(start_point, end_point)
+    #     rectangle_points = get_rectangle_on_point(center, width, height)
+    #     theta = math.atan2(y2-y1, x2-x1)
+    #     rotated_rectangle_points = []
+    #     for p in rectangle_points:
+    #         rotated_p = rotate_point_around_point(p, center, theta)
+    #         rotated_rectangle_points.extend(rotated_p)
+    #     pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', rotated_rectangle_points), ('c3B', colors_list))

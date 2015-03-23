@@ -1,9 +1,11 @@
 import math
+import time
 import pyglet
 from pyglet.window import key, mouse
 
 from app.config import config
 from app.pythomas import pythomas as lib
+from app.classes.agent import Agent, SuperAgent
 from app.classes.animation import Animation
 from app.classes.navigation_graph import NavigationGraph, Node
 from app.pythomas.pythomas import PygletLib as Plib
@@ -94,31 +96,34 @@ class MainWindow(BaseWindow):
                                             anchor_x='center', anchor_y='center',
                                             color=(255, 0, 0, 255))
         self.background_image = pyglet.resource.image(lib.resource('bag/oasis2.png'))
-        self.agent_image = pyglet.resource.image(lib.resource("walk.png"))
-        self.animation = Animation(self.agent_image, 8, 8, start_rotation=-math.pi)
+        # self.agent_image = pyglet.resource.image(lib.resource("walk.png"))
+        # self.animation = Animation(self.agent_image, 8, 8, start_rotation=-math.pi)
+        self.agent = SuperAgent()
         self.window.set_visible(True)
         if not self.window.fullscreen:
             self.window.set_size(self.background_image.width, self.background_image.height)
         self.window.push_handlers(self)
-        self.window.push_handlers(self.animation)
+        # self.window.push_handlers(self.animation)
         # self.fit_label(self.text_label)
 
     def update(self, dt):
-        self.animation.update(dt)
+        self.agent.update(dt)
 
     def on_draw(self):
         self.window.clear()
-        self.background_image.blit(0, 0)
+        # self.background_image.blit(0, 0)
 
         def draw_graph():
             nav_batch = pyglet.graphics.Batch()
             self.nav_graph.draw(nav_batch)
             nav_batch.draw()
         draw_graph()
-        self.text_label.draw()
-        self.animation.draw()
+        # self.text_label.draw()
+        if self.agent.state != self.agent.State.Idle:
+            self.agent.draw()
         # lib.PygletLib.draw_rectangle(x=50, y=100, width=200, height=50)
         # lib.PygletLib.draw_diagonal_rectangle((100, 100), (300, 300), 10)
+        # Plib.draw_diagonal_rectangle((100, 100), (200, 200), 10)
 
     def on_key_press(self, symbol, modifiers):
         pass
@@ -127,13 +132,44 @@ class MainWindow(BaseWindow):
         print("Symbol released: {0}".format(symbol))
 
     def on_mouse_press(self, x, y, button, modifiers):
+        node = self.nav_graph.get_node_from_position((x, y))
+        selected_nodes = self.nav_graph.selected_nodes
+
         if button == mouse.LEFT:
+
             if Plib.is_ctrl_pressed(self.pressed_keys):
                 self.nav_graph.select_node_at_position((x, y))
-            if Plib.is_alt_pressed(self.pressed_keys):
-                self.nav_graph.deselect_node_at_position((x, y))
+            elif Plib.is_alt_pressed(self.pressed_keys):
+                self.nav_graph.remove_node(node)
+            elif self.pressed_keys[key.S]:
+                self.nav_graph.set_start_node(node)
+            elif self.pressed_keys[key.D]:
+                self.nav_graph.set_destination_node(node)
+            elif node is not None:
+                self.nav_graph.deselect_all_nodes()
+                self.nav_graph.select_node(node)
+
         if button == mouse.RIGHT:
-            self.nav_graph.add_node(Node(x, y))
+
+            if Plib.is_ctrl_pressed(self.pressed_keys):
+                if not selected_nodes:
+                    self.nav_graph.add_node(Node(x, y))
+                else:
+                    if not Plib.is_shift_pressed(self.pressed_keys):
+                        self.nav_graph.create_edge_from_selected_to(node)
+                    else:
+                        self.nav_graph.create_edge_to_selected_from(node)
+
+            elif Plib.is_alt_pressed(self.pressed_keys):
+                if not selected_nodes:
+                    self.nav_graph.remove_node(node)
+                else:
+                    if not Plib.is_shift_pressed(self.pressed_keys):
+                        self.nav_graph.remove_edges_from_many(node, selected_nodes)
+                    else:
+                        self.nav_graph.remove_edges_to_many(node, selected_nodes)
+            else:
+                self.nav_graph.add_node(Node(x, y))
 
     def on_resize(self, width, height):
         self.background_image.width = width

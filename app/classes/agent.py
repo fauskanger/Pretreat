@@ -1,8 +1,10 @@
+import math
 import pyglet
 from enum import Enum
 from app.classes.animation import Animation
 
 from app.config import config, global_string_values as strings
+from app.pythomas import pythomas as lib
 from app.pythomas.pythomas import PygletLib as Plib
 
 agent_number = 1
@@ -36,7 +38,7 @@ class Agent:
         global agent_number
         if name is None:
             name = "Agent #{0}".format(agent_number)
-            agent_number += 1
+        agent_number += 1
         self.animation = animation
         self.state = self.State.Idle
         self.current_node = None
@@ -95,3 +97,10 @@ class Agent:
     def update(self, dt):
         if self.animation is not None:
             self.animation.update(dt)
+
+
+class SuperAgent(Agent):
+    def __init__(self):
+        self.agent_image = pyglet.resource.image(lib.resource("walk.png"))
+        self.animation = Animation(self.agent_image, 8, 8, start_rotation=-math.pi)
+        Agent.__init__(self, "Agent #111", self.animation)
