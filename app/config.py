@@ -45,6 +45,7 @@ class Configurations():
 
     class World():
         def __init__(self):
+            colors = Colors()
             self.size_x = 18
             self.size_y = 13
             self.start_x = 1
@@ -67,7 +68,9 @@ class Configurations():
             self.color_mode = 'c3B'
             self.node_color = (255, 255, 255)
             self.edge_color = (255, 255, 255)
-            self.selected_node_color = (191, 191, 191)
+            self.selected_node_color = (63, 127, 127)
+            self.start_node_color = colors.cyan
+            self.destination_node_color = colors.magenta
             self.node_order_index = 1
 
             self.node_radius = 20
@@ -84,6 +87,7 @@ class Configurations():
         self.strings = self.Strings()
         self.window = self.Window()
         self.world = self.World()
+        self.colors = Colors()
 
 
 config = Configurations()

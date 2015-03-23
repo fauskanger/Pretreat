@@ -1,11 +1,17 @@
 import math
 import pyglet
 import networkx as nx
+from enum import Enum
 from app.pythomas import pythomas as lib
 from app.config import config
 
 
 class Node:
+    class State(Enum):
+        Default = 0,
+        Start = 1,
+        Destination = 2
+
     def __init__(self, x, y, altitude=0, content=None):
         self.current_radius = config.world.node_radius
         self.default_color = config.world.node_color
@@ -18,10 +24,14 @@ class Node:
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
         self.printed = False
         self.circle = lib.Circle((x, y), self.current_radius, self.current_color)
+        self.state = self.State.Default
 
     def set_radius(self, new_radius):
         self.current_radius = new_radius
         self.circle.radius = self.current_radius
+
+    def set_state(self, state):
+        self.state = state
 
     def set_position(self, new_position):
         self.x = new_position[0]
@@ -49,6 +59,9 @@ class Node:
                 self.circle.expand_radius(radius_offset)
 
         draw_circle()
+
+    def set_color(self, color):
+        self.circle.set_color(color)
 
     def update(self, dt):
         pass
@@ -93,9 +106,12 @@ class NavigationGraph:
     def __init__(self):
         self.graph = nx.DiGraph()
         self.selected_nodes = []
-        # self.selected_nodes_shapes = []
         self.pathfinder = Pathfinder(self.graph)
-        # self.nodes = []
+        self.states_color = {
+            Node.State.Default: config.world.node_color,
+            Node.State.Start: config.world.node_color,
+            Node.State.Destination: config.world.node_color,
+            }
 
     @staticmethod
     def get_node_distance(from_node, to_node):
@@ -109,15 +125,29 @@ class NavigationGraph:
                 return node
         return None
 
+    def set_node_to_default(self, node):
+        self.set_node_state(node, Node.State.Default)
+
+    def set_node_state(self, node, state):
+        if node is not None:
+            node.set_color(self.states_color[state])
+            node.set_state(state)
+            if state == Node.State.Start:
+                self.pathfinder.start_node = node
+            elif state == Node.State.Destination:
+                self.pathfinder.destination_node = node
+
     def set_start_node(self, node):
         if node is not None:
-            self.pathfinder.start_node = node
             print("Start node: {0}".format(node.label))
+            self.set_node_to_default(self.pathfinder.start_node)
+            self.set_node_state(node, Node.State.Start)
 
     def set_destination_node(self, node):
         if node is not None:
-            self.pathfinder.destination_node = node
             print("Destination node: {0}".format(node.label))
+            self.set_node_to_default(self.pathfinder.destination_node)
+            self.set_node_state(node, Node.State.Destination)
 
     def create_edge_from_selected_to(self, node):
         for selected_node in self.selected_nodes:
@@ -215,7 +245,7 @@ class NavigationGraph:
                 self.get_edge_object(edge).draw(batch)
         draw_edges()
 
-        def draw_selection(node):
+        def draw_node_as_selected(node):
             color = config.world.selected_node_color
             radius = node.get_radius() + config.world.selected_radius_increase
             circle = lib.Circle(position=node.get_position(), radius=radius, color=color)
@@ -229,13 +259,8 @@ class NavigationGraph:
                     node_instance = node[0]
                 # node_instance.draw(batch)
                 if node_instance in self.selected_nodes:
-                    draw_selection(node_instance)
+                    draw_node_as_selected(node_instance)
                     node_instance.draw(radius_offset=config.world.selected_radius_decrease)
-                    node_instance.draw()
-                # if node_instance == self.pathfinder.start_node:
-                #     node_instance.draw(radius_offset=+20)
-                # elif node_instance == self.pathfinder.destination_node:
-                #     node_instance.draw(radius_offset=+20)
                 else:
                     node_instance.draw()
 
