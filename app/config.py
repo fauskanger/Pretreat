@@ -67,12 +67,13 @@ class Configurations():
             self.color_mode = 'c3B'
             self.node_color = (255, 255, 255)
             self.edge_color = (255, 255, 255)
-            self.selected_node_color = (63, 63, 63)
+            self.selected_node_color = (191, 191, 191)
             self.node_order_index = 1
 
             self.node_radius = 20
-            self.selected_radius_increase = 2  # For the outer circle radius
-            self.selected_radius_decrease = 1  # How much the node circle will shrink
+            self.selected_radius_increase = 3  # For the outer circle radius
+            self.selected_radius_decrease = 2  # How much the node circle will shrink
+            self.node_padding = 10
 
             self.edge_thickness = 5
             self.edge_lane_offset = self.node_radius - self.edge_thickness

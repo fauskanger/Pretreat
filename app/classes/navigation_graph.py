@@ -53,6 +53,10 @@ class Node:
     def update(self, dt):
         pass
 
+    def get_padded_radius(self):
+        padding = config.world.selected_radius_increase+config.world.node_padding
+        return self.get_radius() + padding
+
 
 class Edge:
     def __init__(self, from_node, to_node):
@@ -158,7 +162,7 @@ class NavigationGraph:
             return False
         for existing_node in self.graph.nodes():
             distance = self.get_node_distance(existing_node, node)
-            if distance < min(node.get_radius(), existing_node.get_radius()):
+            if distance < existing_node.get_padded_radius() + node.get_padded_radius():
                 return False
         self.graph.add_node(node)
         return True
@@ -209,7 +213,7 @@ class NavigationGraph:
         def draw_edges():
             for edge in self.graph.edges(data=True):
                 self.get_edge_object(edge).draw(batch)
-
+        draw_edges()
 
         def draw_selection(node):
             color = config.world.selected_node_color
@@ -236,7 +240,6 @@ class NavigationGraph:
                     node_instance.draw()
 
         draw_nodes()
-        draw_edges()
 
     def update(self, dt):
         pass
