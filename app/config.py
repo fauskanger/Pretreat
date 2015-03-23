@@ -75,7 +75,7 @@ class Configurations():
             self.selected_radius_decrease = 1  # How much the node circle will shrink
 
             self.edge_thickness = 5
-            self.edge_lane_offset = 15
+            self.edge_lane_offset = self.node_radius - self.edge_thickness
 
             self.default_rand_seed = 13
 

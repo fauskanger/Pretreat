@@ -225,10 +225,18 @@ class Rectangle(Shape):
         y2 = self.end_point[1]
         theta = math.atan2(y2-y1, x2-x1)
         rotated_rectangle_points = []
+        self_position = self.get_position()
         for p in rectangle_points:
-            rotated_p = rotate_point_around_point(p, self.get_position(), theta)
+            rotated_p = rotate_point_around_point(p, self_position, theta)
             rotated_rectangle_points.extend(rotated_p)
         return rotated_rectangle_points
+
+    # def draw(self, batch=None):
+    #     super(Rectangle, self).draw(batch)
+    #     circle_start = Circle(self.start_point, 10, (0, 255, 255))
+    #     circle_end = Circle(self.end_point, 10, (0, 255, 255))
+    #     circle_start.draw()
+    #     circle_end.draw()
 
 
 # pyglet-specific library

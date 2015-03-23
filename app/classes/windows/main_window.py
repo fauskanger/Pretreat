@@ -103,6 +103,7 @@ class MainWindow(BaseWindow):
         if not self.window.fullscreen:
             self.window.set_size(self.background_image.width, self.background_image.height)
         self.window.push_handlers(self)
+        self.draw_background = True
         # self.window.push_handlers(self.animation)
         # self.fit_label(self.text_label)
 
@@ -111,7 +112,8 @@ class MainWindow(BaseWindow):
 
     def on_draw(self):
         self.window.clear()
-        # self.background_image.blit(0, 0)
+        if self.draw_background:
+            self.background_image.blit(0, 0)
 
         def draw_graph():
             nav_batch = pyglet.graphics.Batch()
@@ -126,6 +128,8 @@ class MainWindow(BaseWindow):
         # Plib.draw_diagonal_rectangle((100, 100), (200, 200), 10)
 
     def on_key_press(self, symbol, modifiers):
+        if symbol == key.B:
+            self.draw_background = not self.draw_background
         pass
 
     def on_key_release(self, symbol, modifiers):

@@ -63,10 +63,11 @@ class Edge:
         from_x, from_y = from_node.get_position()
         to_x, to_y = to_node.get_position()
         theta = math.atan2(to_y-from_y, to_x-from_x)
+        # theta = -theta
         lane_offset = config.world.edge_lane_offset
         dx = lane_offset * math.sin(theta)
         dy = lane_offset * math.cos(theta)
-        offset = dx, dy
+        offset = dx, -dy
         from_position = lib.sum_points((from_x, from_y), offset)
         to_position = lib.sum_points((to_x, to_y), offset)
 
@@ -209,7 +210,6 @@ class NavigationGraph:
             for edge in self.graph.edges(data=True):
                 self.get_edge_object(edge).draw(batch)
 
-        draw_edges()
 
         def draw_selection(node):
             color = config.world.selected_node_color
@@ -236,6 +236,7 @@ class NavigationGraph:
                     node_instance.draw()
 
         draw_nodes()
+        draw_edges()
 
     def update(self, dt):
         pass
