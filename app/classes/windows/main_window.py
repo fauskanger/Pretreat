@@ -1,12 +1,9 @@
-import math
-import time
 import pyglet
 from pyglet.window import key, mouse
 
 from app.config import config
 from app.pythomas import pythomas as lib
 from app.classes.agent import Agent, SuperAgent
-from app.classes.animation import Animation
 from app.classes.navigation_graph import NavigationGraph, Node
 from app.pythomas.pythomas import PygletLib as Plib
 

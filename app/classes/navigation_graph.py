@@ -3,6 +3,7 @@ import pyglet
 import networkx as nx
 from enum import Enum
 from app.pythomas import pythomas as lib
+from app.pythomas import shapes as shapelib
 from app.config import config
 
 
@@ -23,7 +24,7 @@ class Node:
         self.content = content
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
         self.printed = False
-        self.circle = lib.Circle((x, y), self.current_radius, self.current_color)
+        self.circle = shapelib.Circle((x, y), self.current_radius, self.current_color)
         self.select_circle = None
         self.state = self.State.Default
         self.is_selected = is_selected
@@ -34,7 +35,7 @@ class Node:
     def update_selected_indicator(self):
         selected_radius = self.get_radius() + config.world.selected_radius_increase
         color = config.world.selected_node_color
-        self.select_circle = lib.Circle(position=self.get_position(), radius=selected_radius, color=color)
+        self.select_circle = shapelib.Circle(position=self.get_position(), radius=selected_radius, color=color)
 
     def set_radius(self, new_radius):
         self.current_radius = new_radius
@@ -140,25 +141,25 @@ class Edge:
                                                   direction_point=from_position)
         self.p1_circle = self.p2_circle = None
         if from_circle_point is not None:
-            self.p1_circle = lib.Circle(from_circle_point, config.world.edge_end_radius, lib.colors.red)
+            self.p1_circle = shapelib.Circle(from_circle_point, config.world.edge_end_radius, lib.colors.red)
         if to_circle_point is not None:
-            self.p2_circle = lib.Circle(to_circle_point, config.world.edge_end_radius, lib.colors.blue)
+            self.p2_circle = shapelib.Circle(to_circle_point, config.world.edge_end_radius, lib.colors.blue)
 
         colors = list(config.world.edge_color * 4)
         if from_circle_point is None or to_circle_point is None:
             print("Could not draw to circle.")
-            self.shape = lib.Rectangle(from_position, to_position,
+            self.shape = shapelib.Rectangle(from_position, to_position,
                                        config.world.edge_thickness, colors_list=colors)
             self.inner_from_shape = self.inner_to_shape = None
         else:
-            self.shape = lib.Rectangle(from_circle_point, to_circle_point,
+            self.shape = shapelib.Rectangle(from_circle_point, to_circle_point,
                                        config.world.edge_thickness, colors_list=colors)
             inner_color = lib.colors.extra.green
             inner_line_width = 4
-            self.inner_from_shape = lib.Rectangle(from_node.get_position(), self.p1_circle.get_position(),
-                                                  radius=inner_line_width,  color=inner_color)
-            self.inner_to_shape = lib.Rectangle(to_node.get_position(), self.p2_circle.get_position(),
-                                                radius=inner_line_width,  color=inner_color)
+            self.inner_from_shape = shapelib.Rectangle(from_node.get_position(), self.p1_circle.get_position(),
+                                                       radius=inner_line_width, color=inner_color)
+            self.inner_to_shape = shapelib.Rectangle(to_node.get_position(), self.p2_circle.get_position(),
+                                                     radius=inner_line_width,  color=inner_color)
 
 
 class Pathfinder:
