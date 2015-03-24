@@ -237,19 +237,15 @@ class Shape(object):
         number_of_vertices = int(len(self.draw_points_list)/2)
         vertex_list = pyglet.graphics.vertex_list(number_of_vertices, 'v2f', config.world.color_mode)
         vertex_list.vertices = self.draw_points_list
-        print_start = "Created vertex list, adding color list."
         if self.color is not None:
-            print("{0}: Has color".format(print_start))
             vertex_list.colors = list(self.color*number_of_vertices)
         elif self.color_list is None:
-            print("{0}: No list, no color".format(print_start))
             vertex_list.colors = list(colors.black*number_of_vertices)
         elif self.color_list is not None and len(self.color_list) != 3*number_of_vertices:
             print("Color list not same length as vertex list! Colors: ({0}) {1}, vertices: ({2}) {3}"
                   .format(len(self.color_list), self.color_list, vertex_list.count, vertex_list.vertices))
             vertex_list.colors = list(self.color_list[0]*number_of_vertices)
         else:
-            print("{0}: Has list, correct number".format(print_start))
             vertex_list.colors = self.color_list
         self.color_list = vertex_list.colors
         return vertex_list
