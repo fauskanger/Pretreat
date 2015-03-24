@@ -12,7 +12,7 @@ class Node:
         Start = 1,
         Destination = 2
 
-    def __init__(self, x, y, altitude=0, content=None):
+    def __init__(self, x, y, altitude=0, content=None, is_selected=False):
         self.current_radius = config.world.node_radius
         self.default_color = config.world.node_color
         self.current_color = self.default_color
@@ -25,10 +25,14 @@ class Node:
         self.printed = False
         self.circle = lib.Circle((x, y), self.current_radius, self.current_color)
         self.state = self.State.Default
+        self.is_selected = is_selected
+
+    def set_as_selected(self, is_selected=True):
+        self.is_selected = is_selected
 
     def set_radius(self, new_radius):
         self.current_radius = new_radius
-        self.circle.radius = self.current_radius
+        self.circle.set_radius(self.current_radius)
 
     def set_state(self, state):
         self.state = state
@@ -45,6 +49,16 @@ class Node:
 
     def get_radius(self):
         return self.current_radius
+
+    def get_padded_radius(self):
+        padding = config.world.selected_radius_increase+config.world.node_padding
+        return self.get_radius() + padding
+
+    def get_visual_radius(self):
+        extra = 0.0
+        if self.is_selected:
+            extra += config.world.selected_radius_increase
+        return self.get_radius()+extra
 
     def get_position(self):
         return self.x, self.y
@@ -66,33 +80,72 @@ class Node:
     def update(self, dt):
         pass
 
-    def get_padded_radius(self):
-        padding = config.world.selected_radius_increase+config.world.node_padding
-        return self.get_radius() + padding
-
 
 class Edge:
     def __init__(self, from_node, to_node):
         self.shape = None
+        self.inner_from_shape = None
+        self.inner_to_shape = None
+        self.p1_circle = None
+        self.p2_circle = None
         self.update_shape(from_node, to_node)
+
+    def draw(self, batch=None):
+        self.shape.draw(batch)
+        self.inner_from_shape.draw(batch)
+        self.inner_to_shape.draw(batch)
+        self.p1_circle.draw(batch)
+        self.p2_circle.draw(batch)
 
     def update_shape(self, from_node, to_node):
         from_x, from_y = from_node.get_position()
         to_x, to_y = to_node.get_position()
         theta = math.atan2(to_y-from_y, to_x-from_x)
-        # theta = -theta
-        lane_offset = config.world.edge_lane_offset
-        dx = lane_offset * math.sin(theta)
-        dy = lane_offset * math.cos(theta)
-        offset = dx, -dy
-        from_position = lib.sum_points((from_x, from_y), offset)
-        to_position = lib.sum_points((to_x, to_y), offset)
 
-        colors = lib.flatten_list_of_tuples([config.world.edge_color * 4])
-        self.shape = lib.Rectangle(from_position, to_position, config.world.edge_thickness, colors_list=colors)
+        def get_pos_offset(node):
+            offset_radius = config.world.edge_lane_offset
+            if node.is_selected and config.world.adjust_edge_to_selection:
+                offset_radius += config.world.selected_radius_decrease
+            dx = offset_radius * math.sin(theta)
+            dy = offset_radius * math.cos(theta)
+            offset = dx, -dy
+            return offset
 
-    def draw(self, batch=None):
-        self.shape.draw(batch)
+        from_offset = get_pos_offset(from_node)
+        to_offset = get_pos_offset(to_node)
+        from_position = lib.sum_points(from_node.get_position(), from_offset)
+        to_position = lib.sum_points(to_node.get_position(), to_offset)
+
+        from_circle_point = lib.get_point_on_circle(circle_center=from_node.get_position(),
+                                                    radius=from_node.get_visual_radius(),
+                                                    line_point=from_position,
+                                                    direction_point=to_position)
+
+        to_circle_point = lib.get_point_on_circle(circle_center=to_node.get_position(),
+                                                  radius=to_node.get_visual_radius(),
+                                                  line_point=to_position,
+                                                  direction_point=from_position)
+        self.p1_circle = self.p2_circle = None
+        if from_circle_point is not None:
+            self.p1_circle = lib.Circle(from_circle_point, config.world.edge_end_radius, lib.colors.red)
+        if to_circle_point is not None:
+            self.p2_circle = lib.Circle(to_circle_point, config.world.edge_end_radius, lib.colors.blue)
+
+        colors = list(config.world.edge_color * 4)
+        if from_circle_point is None or to_circle_point is None:
+            print("Could not draw to circle.")
+            self.shape = lib.Rectangle(from_position, to_position,
+                                       config.world.edge_thickness, colors_list=colors)
+            self.inner_from_shape = self.inner_to_shape = None
+        else:
+            self.shape = lib.Rectangle(from_circle_point, to_circle_point,
+                                       config.world.edge_thickness, colors_list=colors)
+            inner_color = lib.colors.extra.green
+            inner_line_width = 4
+            self.inner_from_shape = lib.Rectangle(from_node.get_position(), self.p1_circle.get_position(),
+                                                  radius=inner_line_width,  color=inner_color)
+            self.inner_to_shape = lib.Rectangle(to_node.get_position(), self.p2_circle.get_position(),
+                                                radius=inner_line_width,  color=inner_color)
 
 
 class Pathfinder:
@@ -109,8 +162,8 @@ class NavigationGraph:
         self.pathfinder = Pathfinder(self.graph)
         self.states_color = {
             Node.State.Default: config.world.node_color,
-            Node.State.Start: config.world.node_color,
-            Node.State.Destination: config.world.node_color,
+            Node.State.Start: config.world.start_node_color,
+            Node.State.Destination: config.world.destination_node_color,
             }
 
     @staticmethod
@@ -118,6 +171,13 @@ class NavigationGraph:
         x = abs(from_node.x - to_node.x)
         y = abs(from_node.y - to_node.y)
         return math.sqrt(x * x + y * y)
+
+    def is_valid_node_position(self, position):
+        for existing_node in self.graph.nodes():
+            distance = lib.get_point_distance(existing_node.get_position(), position)
+            if distance < existing_node.get_padded_radius()*2:
+                return False
+        return True
 
     def get_node_from_position(self, position):
         for node in self.graph.nodes():
@@ -133,8 +193,10 @@ class NavigationGraph:
             node.set_color(self.states_color[state])
             node.set_state(state)
             if state == Node.State.Start:
+                self.set_node_to_default(self.pathfinder.start_node)
                 self.pathfinder.start_node = node
             elif state == Node.State.Destination:
+                self.set_node_to_default(self.pathfinder.destination_node)
                 self.pathfinder.destination_node = node
 
     def set_start_node(self, node):
@@ -157,16 +219,30 @@ class NavigationGraph:
         for selected_node in self.selected_nodes:
             self.add_edge(node, selected_node)
 
+    def update_node_edges(self, node):
+        for neighbor_node in nx.all_neighbors(self.graph, node):
+            def update_edge_shape(from_node, to_node):
+                edge = self.get_edge_object((from_node, to_node))
+                if edge is not None:
+                    edge.update_shape(from_node, to_node)
+
+            update_edge_shape(node, neighbor_node)
+            update_edge_shape(neighbor_node, node)
+
     def select_node(self, node):
         if node is None or node in self.selected_nodes:
             return False
         self.selected_nodes.append(node)
+        node.set_as_selected(is_selected=True)
+        self.update_node_edges(node)
         return True
 
     def deselect_node(self, node):
         if node is None or node not in self.selected_nodes:
             return False
         self.selected_nodes.remove(node)
+        node.set_as_selected(is_selected=False)
+        self.update_node_edges(node)
         return True
 
     def select_node_at_position(self, position):
@@ -182,20 +258,24 @@ class NavigationGraph:
                 self.select_node(node)
 
     def deselect_all_nodes(self):
+        for node in self.selected_nodes:
+            self.deselect_node(node)
         self.selected_nodes = []
 
     def get_edge_cost(self, from_node, to_node):
         return self.get_node_distance(from_node, to_node)
 
     def add_node(self, node):
-        if node is None:
+        if node is None or not self.is_valid_node_position(node.get_position()):
             return False
-        for existing_node in self.graph.nodes():
-            distance = self.get_node_distance(existing_node, node)
-            if distance < existing_node.get_padded_radius() + node.get_padded_radius():
-                return False
         self.graph.add_node(node)
         return True
+
+    def move_node(self, node, position):
+        if node is None or not self.is_valid_node_position(node.get_position()):
+            return False
+        node.set_position(position)
+        self.update_node_edges(node)
 
     def remove_node(self, node):
         if node is None:
@@ -208,7 +288,7 @@ class NavigationGraph:
             return False
 
     def add_edge(self, from_node, to_node):
-        if from_node is None or to_node is None:
+        if from_node is None or to_node is None or from_node == to_node:
             return False
         try:
             weight = self.get_edge_cost(from_node, to_node)
@@ -236,20 +316,23 @@ class NavigationGraph:
             self.remove_edge(from_node, to_node)
 
     def get_edge_object(self, edge):
+        try:
             return self.graph[edge[0]][edge[1]]['object']
+        except KeyError:
+            return None
 
     # TODO: batched rendering of primitives
     def draw(self, batch=None):
-        def draw_edges():
-            for edge in self.graph.edges(data=True):
-                self.get_edge_object(edge).draw(batch)
-        draw_edges()
 
-        def draw_node_as_selected(node):
-            color = config.world.selected_node_color
-            radius = node.get_radius() + config.world.selected_radius_increase
-            circle = lib.Circle(position=node.get_position(), radius=radius, color=color)
-            circle.draw()
+        def draw_selected_nodes():
+            def draw_node_as_selected(node):
+                color = config.world.selected_node_color
+                radius = node.get_radius() + config.world.selected_radius_increase
+                circle = lib.Circle(position=node.get_position(), radius=radius, color=color)
+                circle.draw()
+            for selected_node in self.selected_nodes:
+                draw_node_as_selected(selected_node)
+        draw_selected_nodes()
 
         def draw_nodes():
             is_reading_data = True
@@ -259,12 +342,15 @@ class NavigationGraph:
                     node_instance = node[0]
                 # node_instance.draw(batch)
                 if node_instance in self.selected_nodes:
-                    draw_node_as_selected(node_instance)
                     node_instance.draw(radius_offset=config.world.selected_radius_decrease)
                 else:
                     node_instance.draw()
-
         draw_nodes()
+
+        def draw_edges():
+            for edge in self.graph.edges(data=True):
+                self.get_edge_object(edge).draw(batch)
+        draw_edges()
 
     def update(self, dt):
         pass

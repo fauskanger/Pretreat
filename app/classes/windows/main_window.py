@@ -59,8 +59,16 @@ class BaseWindow:
         display = platform.get_default_display()
         screen = display.get_default_screen()
 
+        template = pyglet.gl.Config(sample_buffers=1, samples=4)
+        try:
+            gl_config = screen.get_best_config(template)
+        except pyglet.window.NoSuchConfigException:
+            template = pyglet.gl.Config()
+            gl_config = screen.get_best_config(template)
+
         print('Display: {0}'.format(display))
         print('Screen: {0}'.format(screen))
+        print('Screen Config: {0}'.format(gl_config))
 
         def get_initial_window_size():
             if config.window.fullscreen:
@@ -80,7 +88,9 @@ class BaseWindow:
                     resizable=config.window.resizable,
                     width=window_width,
                     height=window_height,
-                    visible=False)
+                    visible=False,
+                    config=gl_config,
+                    )
 
 
 class MainWindow(BaseWindow):
@@ -104,6 +114,9 @@ class MainWindow(BaseWindow):
             self.window.set_size(self.background_image.width, self.background_image.height)
         self.window.push_handlers(self)
         self.draw_background = True
+        self.dragged_node = None
+        self.dragged_node_start_position = None
+        self.drag_click_offset = None
         # self.window.push_handlers(self.animation)
         # self.fit_label(self.text_label)
 
@@ -123,17 +136,33 @@ class MainWindow(BaseWindow):
         # self.text_label.draw()
         if self.agent.state != self.agent.State.Idle:
             self.agent.draw()
-        # lib.PygletLib.draw_rectangle(x=50, y=100, width=200, height=50)
-        # lib.PygletLib.draw_diagonal_rectangle((100, 100), (300, 300), 10)
-        # Plib.draw_diagonal_rectangle((100, 100), (200, 200), 10)
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.B:
             self.draw_background = not self.draw_background
-        pass
 
     def on_key_release(self, symbol, modifiers):
-        print("Symbol released: {0}".format(symbol))
+        pass
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        # is_drag_start = False
+        # if self.dragged_node is None:
+        #     self.dragged_node = self.nav_graph.get_node_from_position((x, y))
+        #     is_drag_start = True
+        # if self.dragged_node is not None:
+        #     if is_drag_start:
+        #         self.dragged_node_start_position = self.dragged_node.get_position()
+        #         self.drag_click_offset = lib.sum_points(self.dragged_node_start_position, (-x, -y))
+        #     dx, dx = self.drag_click_offset
+        #     self.nav_graph.move_node(self.dragged_node, (x+dx, y+dy))
+        pass
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        def reset_node_dragging():
+            self.dragged_node = None
+            self.dragged_node_start_position = None
+            self.drag_click_offset = None
+        reset_node_dragging()
 
     def on_mouse_press(self, x, y, button, modifiers):
         node = self.nav_graph.get_node_from_position((x, y))
@@ -150,8 +179,13 @@ class MainWindow(BaseWindow):
             elif self.pressed_keys[key.D]:
                 self.nav_graph.set_destination_node(node)
             elif node is not None:
+                if node.is_selected:
+                    self.nav_graph.deselect_all_nodes()
+                else:
+                    self.nav_graph.deselect_all_nodes()
+                    self.nav_graph.select_node(node)
+            else:
                 self.nav_graph.deselect_all_nodes()
-                self.nav_graph.select_node(node)
 
         if button == mouse.RIGHT:
 
@@ -173,7 +207,11 @@ class MainWindow(BaseWindow):
                     else:
                         self.nav_graph.remove_edges_to_many(node, selected_nodes)
             else:
-                self.nav_graph.add_node(Node(x, y))
+                if not selected_nodes:
+                    self.nav_graph.add_node(Node(x, y))
+                else:
+                    self.nav_graph.create_edge_to_selected_from(node)
+                    self.nav_graph.create_edge_from_selected_to(node)
 
     def on_resize(self, width, height):
         self.background_image.width = width

@@ -46,6 +46,85 @@ def get_decomposed_direction_using_slope(distance, slope):
     return x, y
 
 
+def get_abc_roots(a, b, c, threshold=0.1):
+    b2 = b*b
+    ac4 = 4*a*c
+    if b2 < ac4:
+        return None
+    elif abs(b2 - ac4) < threshold:
+        return -b/(2*a),
+    else:
+        root = math.sqrt(b2-ac4)
+        xs1 = (-b+root)/(2*a)
+        xs2 = (-b-root)/(2*a)
+        return xs1, xs2
+
+
+def get_point_on_circle(circle_center, radius, line_point, direction_point):
+    xc, yc = circle_center
+    x1, y1 = line_point
+    xd, yd = direction_point
+    r = radius
+
+    # Solve y=slope(x-x1)+y1 and (x-xc)^2+(y-yc)^2=r^2
+    #   y=slope(x-x1)+y1
+    #   y=slope*x-slope*x1+y1
+    # Use p = -slope*x1 + y1
+    #   =>   y = slope*x + p
+    # Replace y
+    #   =>   (x-xc)^2+(slope*x + p - yc)^2=r^2
+    # Use q = p - yc
+    #   =>   (x-xc)^2+(slope*x + q)^2=r^2
+    # Use sx = slope*x
+    #   =>   (x-xc)^2+(sx + q)^2=r^2
+    #   (x*x - 2*x*xc + xc*xc)  + (sx*sx + 2*sx*q + q*q) = r^2
+    #   x*x+sx*sx - 2*x*xc + 2*sx*q + xc*xc + q*q - r*r = 0
+    # Substitute sx
+    #   =>   x*x*(1+slope*slope) + x*(-2*xc+2*slope*q) + (xc*xc+q*q-r*r) = 0
+    # ABC for roots:
+    #       a = slope*slope + 1
+    #       b = -2*xc + 2*slope*q
+    #       c = xc*xc + q*q - r*r
+    #
+
+    slope = (yd-y1)/(xd-x1)
+    p = -slope*x1 + y1
+    q = p - yc
+
+    # ax^2 + bx - c = 0
+    a = slope*slope + 1
+    b = 2*slope*q - 2*xc
+    c = q*q + xc*xc - r*r
+
+    def f(x):
+        return slope*(x - x1) + y1
+
+    def get_solution():
+        roots = get_abc_roots(a, b, c)
+        if roots is None:
+            return None
+        if len(roots) > 1:
+            xs1, xs2 = roots
+            p1 = (xs1, f(xs1))
+            p2 = (xs2, f(xs2))
+            distance1 = get_point_distance(p1, direction_point)
+            distance2 = get_point_distance(p2, direction_point)
+            if distance1 < distance2:
+                return xs1
+            else:
+                return xs2
+        return roots[0]
+    xs = get_solution()
+    if xs is None:
+        return None
+    point = xs, f(xs)
+    distance = get_point_distance(point, circle_center)
+    if distance - radius >= 1.0:
+        print("Point is found, but not in circle! point: {0}, center: {1}, radius: {2}, distance: {3}"
+              .format(point, circle_center, radius, distance))
+    return point
+
+
 def get_point_in_direction(distance, start_position, point_in_direction, stop_at_target=False):
     if distance is None or start_position is None or point_in_direction is None:
         raise Exception("Foo Bar!")
@@ -121,13 +200,16 @@ from pyglet.window import key
 
 
 class Shape(object):
-    def __init__(self, position, color=colors.white, mode=pyglet.gl.GL_POLYGON):
+    def __init__(self, position, color=None, color_list=None, mode=pyglet.gl.GL_POLYGON):
         self.x = int(position[0])
         self.y = int(position[1])
         self.vertex_list = None
         self.draw_points_list = None  # self.create_draw_points()
         self.vertex_list = None  # self.create_vertex_list()
+        self.color_list = color_list
         self.color = color
+        if color is not None:
+            self.color_list = None
         self.mode = mode
 
     def set_position(self, new_position):
@@ -145,7 +227,9 @@ class Shape(object):
         return self.x, self.y
 
     def set_color(self, color):
-        self.color = color
+        print("Setting color: {0} => {1}".format(color, list(color * self.vertex_list.count)))
+        self.vertex_list.colors = list(color*self.vertex_list.count)
+        self.color_list = self.vertex_list.colors
 
     def create_vertex_list(self):
         if self.draw_points_list is None:
@@ -153,7 +237,17 @@ class Shape(object):
         number_of_vertices = int(len(self.draw_points_list)/2)
         vertex_list = pyglet.graphics.vertex_list(number_of_vertices, 'v2f', config.world.color_mode)
         vertex_list.vertices = self.draw_points_list
-        vertex_list.colors = self.color*number_of_vertices
+        if self.color_list is None and self.color is not None:
+            vertex_list.colors = list(self.color*number_of_vertices)
+        elif self.color_list is None:
+            vertex_list.colors = list(colors.black*number_of_vertices)
+        elif self.color_list is not None and len(self.color_list) != 3*vertex_list.count:
+            print("Color list not same length as vertex list! Colors: ({0}) {1}, vertices: ({2}) {3}"
+                  .format(len(self.color_list), self.color_list, vertex_list.count, vertex_list.vertices))
+            vertex_list.colors = list(self.color_list[0]*number_of_vertices)
+        else:
+            vertex_list.colors = self.color_list
+        self.color_list = vertex_list.colors
         return vertex_list
 
     def update_vertex_list_points(self):
@@ -164,10 +258,12 @@ class Shape(object):
         self.update_vertex_list_points()
 
     def draw(self, batch=None):
+        # TODO: Fix batched draw
+        batch = None
         if self.vertex_list is None:
             return
-        if self.vertex_list is None:
-            self.update_vertex_list_points()
+        # if self.vertex_list is None:
+        #     self.update_vertex_list_points()
         if batch is None:
             # pyglet.graphics.draw(self.vertex_list.get_size(), mode, self.vertex_list)
             self.vertex_list.draw(self.mode)
@@ -197,8 +293,9 @@ class Circle(Shape):
 
 
 class Rectangle(Shape):
-    def __init__(self, start_point, end_point, radius, colors_list=None):
-        Shape.__init__(self, get_middle(start_point, end_point), mode=pyglet.gl.GL_QUADS)
+    def __init__(self, start_point, end_point, radius, colors_list=None, color=None):
+        Shape.__init__(self, position=get_middle(start_point, end_point),
+                       color=color, color_list=colors_list, mode=pyglet.gl.GL_QUADS)
         x1 = start_point[0]
         y1 = start_point[1]
         x2 = end_point[0]
@@ -210,10 +307,11 @@ class Rectangle(Shape):
         self.end_point = end_point
         self.width = math.sqrt(a*a + b*b)
         self.height = radius
-        if colors_list is None:
-            color = [(255, 255, 255) * 4]
-            colors_list = flatten_list_of_tuples(color)
-        self.colors_list = colors_list
+        # if color is not None:
+        #     self.color_list = list(color * 4)
+        # elif colors_list is None:
+        #     colors_list = list(colors.white)
+        # self.colors_list = colors_list
         self.update_shape()
 
     def create_draw_points(self):
@@ -230,13 +328,6 @@ class Rectangle(Shape):
             rotated_p = rotate_point_around_point(p, self_position, theta)
             rotated_rectangle_points.extend(rotated_p)
         return rotated_rectangle_points
-
-    # def draw(self, batch=None):
-    #     super(Rectangle, self).draw(batch)
-    #     circle_start = Circle(self.start_point, 10, (0, 255, 255))
-    #     circle_end = Circle(self.end_point, 10, (0, 255, 255))
-    #     circle_start.draw()
-    #     circle_end.draw()
 
 
 # pyglet-specific library
