@@ -59,16 +59,18 @@ class BaseWindow:
         display = platform.get_default_display()
         screen = display.get_default_screen()
 
-        template = pyglet.gl.Config(sample_buffers=1, samples=4)
+        template = pyglet.gl.Config(sample_buffers=1, samples=config.window.aa_samples)
+        aa = "No"
         try:
             gl_config = screen.get_best_config(template)
+            aa = "Yes ({0}x{0})".format(gl_config.samples)
         except pyglet.window.NoSuchConfigException:
             template = pyglet.gl.Config()
             gl_config = screen.get_best_config(template)
 
-        print('Display: {0}'.format(display))
+        # print('Display: {0}'.format(display))
         print('Screen: {0}'.format(screen))
-        print('Screen Config: {0}'.format(gl_config))
+        print('Anti-alias: {0}'.format(aa))
 
         def get_initial_window_size():
             if config.window.fullscreen:
@@ -179,7 +181,7 @@ class MainWindow(BaseWindow):
             elif self.pressed_keys[key.D]:
                 self.nav_graph.set_destination_node(node)
             elif node is not None:
-                if node.is_selected:
+                if node.is_selected and len(selected_nodes) < 2:
                     self.nav_graph.deselect_all_nodes()
                 else:
                     self.nav_graph.deselect_all_nodes()
@@ -207,11 +209,25 @@ class MainWindow(BaseWindow):
                     else:
                         self.nav_graph.remove_edges_to_many(node, selected_nodes)
             else:
-                if not selected_nodes:
+
+                if node is None:
                     self.nav_graph.add_node(Node(x, y))
+                elif not selected_nodes:
+                        self.nav_graph.remove_node(node)
                 else:
-                    self.nav_graph.create_edge_to_selected_from(node)
-                    self.nav_graph.create_edge_from_selected_to(node)
+                    def all_selected_has_edge():
+                        for selected_node in selected_nodes:
+                            has_uv = self.nav_graph.graph.has_edge(selected_node, node)
+                            has_vu = self.nav_graph.graph.has_edge(node, selected_node)
+                            if not has_uv or not has_vu:
+                                return False
+                        return True
+                    if not all_selected_has_edge():
+                        self.nav_graph.create_edge_to_selected_from(node)
+                        self.nav_graph.create_edge_from_selected_to(node)
+                    else:
+                        self.nav_graph.remove_edges_to_many(node, selected_nodes)
+                        self.nav_graph.remove_edges_from_many(node, selected_nodes)
 
     def on_resize(self, width, height):
         self.background_image.width = width

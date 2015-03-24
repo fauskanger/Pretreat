@@ -24,15 +24,22 @@ class Node:
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
         self.printed = False
         self.circle = lib.Circle((x, y), self.current_radius, self.current_color)
+        self.select_circle = None
         self.state = self.State.Default
         self.is_selected = is_selected
 
     def set_as_selected(self, is_selected=True):
         self.is_selected = is_selected
 
+    def update_selected_indicator(self):
+        selected_radius = self.get_radius() + config.world.selected_radius_increase
+        color = config.world.selected_node_color
+        self.select_circle = lib.Circle(position=self.get_position(), radius=selected_radius, color=color)
+
     def set_radius(self, new_radius):
         self.current_radius = new_radius
         self.circle.set_radius(self.current_radius)
+        self.update_selected_indicator()
 
     def set_state(self, state):
         self.state = state
@@ -62,6 +69,12 @@ class Node:
 
     def get_position(self):
         return self.x, self.y
+
+    def draw_selected_indicator(self, batch=None):
+        if self.is_selected:
+            if self.select_circle is None:
+                self.update_selected_indicator()
+            self.select_circle.draw(batch)
 
     def draw(self, radius_offset=0.0, batch=None):
         def draw_circle():
@@ -326,10 +339,7 @@ class NavigationGraph:
 
         def draw_selected_nodes():
             def draw_node_as_selected(node):
-                color = config.world.selected_node_color
-                radius = node.get_radius() + config.world.selected_radius_increase
-                circle = lib.Circle(position=node.get_position(), radius=radius, color=color)
-                circle.draw()
+                node.draw_selected_indicator()
             for selected_node in self.selected_nodes:
                 draw_node_as_selected(selected_node)
         draw_selected_nodes()
