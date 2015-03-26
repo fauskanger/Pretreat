@@ -1,9 +1,5 @@
-import math
 import pyglet
-from pyglet.window import key, mouse
-from app.classes.windows.main_window import MainWindow, BaseWindow
-from app.config import config
-from app.pythomas import pythomas as lib
+from app.classes.windows.main_window import MainWindow
 
 
 class View():

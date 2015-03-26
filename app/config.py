@@ -205,7 +205,7 @@ class Configurations():
             self.default_width = 560
             self.default_height = 434
             self.desired_fps = 60.0
-            self.aa_samples = 8
+            self.aa_samples = 2
 
     class World():
         def __init__(self):

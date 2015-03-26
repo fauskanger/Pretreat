@@ -11,13 +11,16 @@ class Shape(object):
         self.vertex_list = None
         self.draw_points_list = None  # self.create_draw_points()
         self.vertex_list = None  # self.create_vertex_list()
+        self.translate = None
         self.color_list = color_list
         self.color = color
         if color is not None:
             self.color_list = None
         self.mode = mode
 
-    def set_position(self, new_position):
+    def set_position(self, new_position, translate=True):
+        # if translate:
+        #     self.translate = new_position[0] - self.x, new_position[1] - self.y
         self.x = int(new_position[0])
         self.y = int(new_position[1])
         self.update_shape()
@@ -32,32 +35,55 @@ class Shape(object):
         return self.x, self.y
 
     def set_color(self, color):
-        self.vertex_list.colors = list(color*self.vertex_list.count)
-        self.color_list = self.vertex_list.colors
+        self.color = color
+        self.update_color_list()
+        self.vertex_list.colors = self.color_list
+
+    def update_vertex_list(self):
+        if self.vertex_list is None:
+            return False
+
+    def update_color_list(self, number_of_vertices=None):
+        if number_of_vertices is None:
+            number_of_vertices = self.vertex_list.count
+        count_needed = 3*number_of_vertices
+
+        def get_diff():
+            return len(self.color_list) - count_needed
+        if self.color is not None:
+            self.color_list = list(self.color*number_of_vertices)
+        elif self.color_list is None:
+            print("Warning: Updated color to red from default color.")
+            self.color_list = list(lib.colors.red*number_of_vertices)
+        elif self.color_list is not None and get_diff() != 0:
+            while get_diff() > 0:
+                self.color_list.remove(self.color_list[-3])
+            while get_diff() < 0:
+                self.color_list.append(self.color_list[:3])
+        return self.color_list
 
     def create_vertex_list(self):
+        # Create a vertex list from shape attributes
         if self.draw_points_list is None:
             return None
         number_of_vertices = int(len(self.draw_points_list)/2)
+        self.update_color_list(number_of_vertices)
         vertex_list = pyglet.graphics.vertex_list(number_of_vertices, 'v2f', config.world.color_mode)
         vertex_list.vertices = self.draw_points_list
-        if self.color is not None:
-            vertex_list.colors = list(self.color*number_of_vertices)
-        elif self.color_list is None:
-            vertex_list.colors = list(lib.colors.black*number_of_vertices)
-        elif self.color_list is not None and len(self.color_list) != 3*number_of_vertices:
-            print("Color list not same length as vertex list! Colors: ({0}) {1}, vertices: ({2}) {3}"
-                  .format(len(self.color_list), self.color_list, vertex_list.count, vertex_list.vertices))
-            vertex_list.colors = list(self.color_list[0]*number_of_vertices)
-        else:
-            vertex_list.colors = self.color_list
-        self.color_list = vertex_list.colors
+        vertex_list.colors = self.color_list
         return vertex_list
 
     def update_vertex_list_points(self):
+        # if self.translate and self.vertex_list and self.vertex_list.vertices:
+        #     for i in range(self.vertex_list.count):
+        #         self.vertex_list.vertices[0 + i*2] += self.translate[0]
+        #         self.vertex_list.vertices[1 + i*2] += self.translate[1]
+        #         self.translate = None
+        # else:
         self.vertex_list = self.create_vertex_list()
 
     def update_shape(self):
+        # if not self.translate and not self.draw_points_list:
         self.update_draw_points()
         self.update_vertex_list_points()
 
@@ -66,8 +92,6 @@ class Shape(object):
         batch = None
         if self.vertex_list is None:
             return
-        # if self.vertex_list is None:
-        #     self.update_vertex_list_points()
         if batch is None:
             # pyglet.graphics.draw(self.vertex_list.get_size(), mode, self.vertex_list)
             self.vertex_list.draw(self.mode)

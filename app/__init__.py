@@ -1,5 +1,5 @@
 from app.config import config
-from app.view import View
+from app.classes.view import View
 
 
 class Main():

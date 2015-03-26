@@ -1,6 +1,27 @@
 import numpy as np
 import math
+
 from app.config import config, Colors
+
+
+def try_remove(the_list, element):
+    if not element:
+        return False
+    try:
+        the_list.remove(element)
+        return True
+    except ValueError:
+        return False
+
+
+def try_append(the_list, element):
+    if not element:
+        return False
+    try:
+        the_list.append(element)
+        return True
+    except ValueError:
+        return False
 
 
 def for_each_node_in(graph, lambda_method, is_reading_data=False):
@@ -46,6 +67,14 @@ def get_decomposed_direction_using_slope(distance, slope):
     return x, y
 
 
+def get_closest_point(point, candidates):
+    closest = None
+    for candidate in candidates:
+            if closest is None or get_point_distance(point, candidate) < get_point_distance(point, closest):
+                closest = candidate
+    return closest
+
+
 def get_abc_roots(a, b, c, threshold=0.1):
     b2 = b*b
     ac4 = 4*a*c
@@ -59,14 +88,8 @@ def get_abc_roots(a, b, c, threshold=0.1):
         xs2 = (-b-root)/(2*a)
         return xs1, xs2
 
-
-def get_point_on_circle(circle_center, radius, line_point, direction_point):
-    xc, yc = circle_center
-    x1, y1 = line_point
-    xd, yd = direction_point
-    r = radius
-    slope = (yd-y1)/(xd-x1)
-
+    #   Intersection between line and circle:
+    #
     # Solve y=slope(x-x1)+y1 and (x-xc)^2+(y-yc)^2=r^2
     #   y=slope(x-x1)+y1
     #   y=slope*x-slope*x1+y1
@@ -86,34 +109,48 @@ def get_point_on_circle(circle_center, radius, line_point, direction_point):
     #       a = slope*slope + 1
     #       b = -2*xc + 2*slope*q
     #       c = xc*xc + q*q - r*r
-    #
 
-    p = -slope*x1 + y1
-    q = p - yc
 
-    # ax^2 + bx - c = 0
-    a = slope*slope + 1
-    b = 2*slope*q - 2*xc
-    c = q*q + xc*xc - r*r
+def get_point_on_circle(circle_center, radius, line_point, direction_point):
+    xc, yc = circle_center
+    x1, y1 = line_point
+    xd, yd = direction_point
+    r = radius
+    slope = (yd-y1)/(xd-x1) if xd-x1 != 0 else None
+
+    if slope is None:
+        # Vertical line:
+        # y = yc +/- root{r^2 - (x-xc)^2}
+        root = math.sqrt(r*r - (x1 - xc)*(x1 - xc))
+        ys1 = yc + root
+        ys2 = yc - root
+        p1 = x1, ys1
+        p2 = x1, ys2
+        return get_closest_point(direction_point, candidates=[p1, p2])
 
     def f(x):
         return slope*(x - x1) + y1
 
     def get_solution():
-        roots = get_abc_roots(a, b, c)
-        if roots is None:
+        def get_roots():
+            p = -slope*x1 + y1
+            q = p - yc
+
+            # ax^2 + bx - c = 0
+            a = slope*slope + 1
+            b = 2*slope*q - 2*xc
+            c = q*q + xc*xc - r*r
+
+            return get_abc_roots(a, b, c)
+        solutions = get_roots()
+        if solutions is None:
             return None
-        if len(roots) > 1:
-            xs1, xs2 = roots
-            p1 = (xs1, f(xs1))
-            p2 = (xs2, f(xs2))
-            distance1 = get_point_distance(p1, direction_point)
-            distance2 = get_point_distance(p2, direction_point)
-            if distance1 < distance2:
-                return xs1
-            else:
-                return xs2
-        return roots[0]
+        if len(solutions) > 1:
+            xs1, xs2 = solutions
+            pa1 = (xs1, f(xs1))
+            pa2 = (xs2, f(xs2))
+            return xs1 if pa1 == get_closest_point(direction_point, [pa1, pa2]) else xs2
+        return solutions[0]
     xs = get_solution()
     if xs is None:
         return None
