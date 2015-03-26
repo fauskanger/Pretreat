@@ -17,16 +17,44 @@ class Shape(object):
         if color is not None:
             self.color_list = None
         self.mode = mode
+        self.rotation_anchor = self.get_position()
 
     def set_position(self, new_position, translate=True):
-        # if translate:
-        #     self.translate = new_position[0] - self.x, new_position[1] - self.y
+        translation = new_position[0] - self.x, new_position[1] - self.y
         self.x = int(new_position[0])
         self.y = int(new_position[1])
+        self.set_anchor(lib.sum_points(translation, self.rotation_anchor))
+        if translate:
+            self.translate = translation
         self.update_shape()
 
+    def move(self, translation):
+        self.set_position(lib.sum_points(self.get_position(), translation), translate=True)
+
+    def set_anchor(self, anchor_point):
+        self.rotation_anchor = anchor_point
+
+    def rotate(self, theta, anchor_point=None):
+        anchor_point = anchor_point if anchor_point else self.rotation_anchor
+        rotated_points = []
+        for point_index in range(self.vertex_list.count):
+            x = self.vertex_list.vertices[0 + 2*point_index]
+            y = self.vertex_list.vertices[1 + 2*point_index]
+            point = x, y
+            rotated_points.extend(lib.rotate_point_around_point(point, anchor_point, theta))
+        self.vertex_list.vertices = rotated_points
+        return self.vertex_list.vertices
+
     def update_draw_points(self):
-        self.draw_points_list = self.create_draw_points()
+        if self.translate and self.draw_points_list:
+            translated_points = lib.get_translated_list_of_coords(
+                self.vertex_list.vertices,
+                self.vertex_list.count,
+                self.translate)
+            self.draw_points_list = translated_points
+            self.translate = None
+        else:
+            self.draw_points_list = self.create_draw_points()
 
     def create_draw_points(self):
         return None
@@ -38,10 +66,6 @@ class Shape(object):
         self.color = color
         self.update_color_list()
         self.vertex_list.colors = self.color_list
-
-    def update_vertex_list(self):
-        if self.vertex_list is None:
-            return False
 
     def update_color_list(self, number_of_vertices=None):
         if number_of_vertices is None:
@@ -74,12 +98,6 @@ class Shape(object):
         return vertex_list
 
     def update_vertex_list_points(self):
-        # if self.translate and self.vertex_list and self.vertex_list.vertices:
-        #     for i in range(self.vertex_list.count):
-        #         self.vertex_list.vertices[0 + i*2] += self.translate[0]
-        #         self.vertex_list.vertices[1 + i*2] += self.translate[1]
-        #         self.translate = None
-        # else:
         self.vertex_list = self.create_vertex_list()
 
     def update_shape(self):
@@ -99,6 +117,11 @@ class Shape(object):
             batch.add(self.vertex_list.get_size(), self.mode, None,
                       ('v2f', self.vertex_list.vertices),
                       (config.world.color_mode, self.vertex_list.colors))
+
+    def get_centroid(self):
+        return lib.average_list_of_points(
+            lib.get_list_of_points_from_list_of_coordinates(self.vertex_list.vertices, self.vertex_list.count)
+        )
 
 
 class Circle(Shape):
@@ -156,3 +179,82 @@ class Rectangle(Shape):
             rotated_p = lib.rotate_point_around_point(p, self_position, theta)
             rotated_rectangle_points.extend(rotated_p)
         return rotated_rectangle_points
+
+
+class Triangle(Shape):
+    def __init__(self, base_center, base_width, height=None, rotation=0.0,
+                 anchor_base_center=True, colors_list=None, color=None):
+        Shape.__init__(self, position=base_center,
+                       color=color, color_list=colors_list, mode=pyglet.gl.GL_TRIANGLES)
+        if height is None:
+            height = base_width * 0.866  # math.sqrt(3)/2
+        self.width = base_width
+        self.height = height
+        self.anchor_is_base_center = anchor_base_center
+        self.rotation = rotation
+        self.update_shape()
+
+    @staticmethod
+    def create_with_centroid(centroid, base_width, height=None, rotation=0.0,
+                             anchor_base_center=False, colors_list=None, color=None):
+        if height is None:
+            height = base_width * 0.866  # math.sqrt(3)/2
+        base_left = centroid[0] - base_width/2, centroid[1]
+        base_right = centroid[0] + base_width/2, centroid[1]
+        tip = centroid[0], centroid[1] + height
+        current_centroid = lib.average_list_of_points([base_right, base_left, tip])
+        offset = lib.subtract_points(centroid, current_centroid)
+        correct_base_center = lib.sum_points(centroid, offset)
+        triangle = Triangle(correct_base_center, base_width, height, rotation, anchor_base_center, colors_list, color)
+        triangle.set_anchor(centroid)
+        return triangle
+
+    def create_draw_points(self):
+        default_rotation = math.pi / 2
+        base_left = self.x - self.width/2, self.y
+        base_right = self.x + self.width/2, self.y
+        tip = self.x, self.y + self.height
+        triangle_points = [base_left, base_right, tip]
+        rotated_triangle_points = []
+        anchor = self.rotation_anchor
+        for p in triangle_points:
+            rotated_p = lib.rotate_point_around_point(p, anchor, self.rotation - default_rotation)
+            rotated_triangle_points.extend(rotated_p)
+        return rotated_triangle_points
+
+    def set_height(self, height):
+        pass
+
+    def set_width(self, width):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

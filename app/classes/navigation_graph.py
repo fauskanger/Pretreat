@@ -16,6 +16,7 @@ class NavigationGraph:
         self.graph = nx.DiGraph()
         # self.selected_nodes = []
         self.pathfinder = AStarPathfinder(self.graph)
+        self.triangle = None
 
     def get_selected_nodes(self):
         return [node for node in self.graph.nodes() if node.is_selected()]
@@ -97,12 +98,13 @@ class NavigationGraph:
             update_edge_shape(neighbor_node, node)
 
     def toggle_select(self, node, compare=None):
-        if compare is None:
-            compare = node.is_selected()
-        if compare:
-            self.deselect_node(node)
-        else:
-            self.select_node(node)
+        if node:
+            if compare is None:
+                compare = node.is_selected()
+            if compare:
+                self.deselect_node(node)
+            else:
+                self.select_node(node)
 
     def select_node(self, node):
         if not node:
@@ -239,6 +241,15 @@ class NavigationGraph:
                 self.get_edge_object(edge).draw(batch)
         draw_edges()
 
+        circle = shapelib.Circle((100, 100), 100, color=lib.colors.extra.green)
+        if self.triangle is None:
+            self.triangle = shapelib.Triangle.create_with_centroid(centroid=(100, 100),
+                                                                   base_width=100, height=None,  # 100,
+                                                                   rotation=0, color=lib.colors.white)
+        circle.draw()
+        self.triangle.draw()
+
     def update(self, dt):
         self.update_path_nodes(dt)
+        # self.triangle.rotate(math.pi / 6 * dt, (233, 200))
         pass

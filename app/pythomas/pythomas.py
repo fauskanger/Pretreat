@@ -184,6 +184,39 @@ def get_point_in_direction(distance, start_position, point_in_direction, stop_at
     return new_point
 
 
+def get_list_of_points_from_list_of_coordinates(list_of_coords, point_count):
+    list_of_points = []
+    for point_index in range(point_count):
+        x = list_of_coords[0 + 2*point_index]
+        y = list_of_coords[1 + 2*point_index]
+        list_of_points.append((x, y))
+    return list_of_points
+
+
+def get_translated_list_of_coords(list_of_coords, point_count, translation, as_points=False):
+    dx, dy = translation
+    translated_list = []
+    for point_index in range(point_count):
+        x = list_of_coords[0 + 2*point_index] + dx
+        y = list_of_coords[1 + 2*point_index] + dy
+        if as_points:
+            translated_list.append((x, y))
+        else:
+            translated_list.append(x)
+            translated_list.append(y)
+    return translated_list
+
+
+def average_list_of_points(list_of_points):
+    n = len(list_of_points)
+    sum_x = 0
+    sum_y = 0
+    for x, y in list_of_points:
+        sum_x += x
+        sum_y += y
+    return sum_x/n, sum_y/n
+
+
 def get_rectangle_on_point(point, width, height):
     x, y = point[0], point[1]
     p1 = x-width/2, y+height/2
@@ -196,6 +229,13 @@ def get_rectangle_on_point(point, width, height):
 def get_rotation_matrix(theta):
     return np.array([[math.cos(theta), -math.sin(theta)],
                     [math.sin(theta),  math.cos(theta)]])
+
+
+def rotate_list_of_points_around_point(list_of_points, axis_point, theta):
+    list_of_rotated_points = []
+    for point in list_of_points:
+        list_of_rotated_points.extend(rotate_point_around_point(point, axis_point, theta))
+    return list_of_rotated_points
 
 
 def rotate_point_around_point(point, axis_point, radians_theta):
@@ -228,6 +268,10 @@ def get_middle(point_a, point_b):
 
 def sum_points(p, q):
     return p[0]+q[0], p[1]+q[1]
+
+
+def subtract_points(p, q):
+    return p[0]-q[0], p[1]-q[1]
 
 colors = Colors()
 
