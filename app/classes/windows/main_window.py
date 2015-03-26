@@ -105,22 +105,23 @@ class MainWindow(BaseWindow):
                                             anchor_x='center', anchor_y='center',
                                             color=(255, 0, 0, 255))
         self.background_image = pyglet.resource.image(lib.resource('bag/oasis2.png'))
-        # self.agent_image = pyglet.resource.image(lib.resource("walk.png"))
-        # self.animation = Animation(self.agent_image, 8, 8, start_rotation=-math.pi)
+
         self.agent = SuperAgent()
         self.window.set_visible(True)
         if not self.window.fullscreen:
             self.window.set_size(self.background_image.width, self.background_image.height)
         self.window.push_handlers(self)
         self.draw_background = True
+        self.accumulated_scroll_y = 0.0
+
+        # Dragging of nodes:
         self.dragged_nodes = None
         self.dragged_node_start_positions = None
         self.drag_click_start = None
-        # self.window.push_handlers(self.animation)
-        # self.fit_label(self.text_label)
 
     def update(self, dt):
         self.agent.update(dt)
+        self.nav_graph.update(dt)
 
     def on_draw(self):
         self.window.clear()
@@ -143,77 +144,67 @@ class MainWindow(BaseWindow):
     def on_key_release(self, symbol, modifiers):
         pass
 
-
     def on_mouse_motion(self, x, y, dx, dy):
         # cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
         # self.window.set_mouse_cursor(cursor)
         pass
 
-    @staticmethod
-    def get_next_node_state_from_scroll(forward, node):
+    def get_next_node_state_from_scroll(self, forward, node):
         if node is not None:
             states_count = len(list(Node.State))
-            value = node.state.value if node.state else Node.State.Default
+            print("Current state: {1} Length: {0}".format(states_count, node.state))
+            value = node.state.value if node.state else Node.State.Default.value
             value += 1 if forward else -1
             value = (value + states_count) % states_count
-            print(value)
+            print("Next state from scroll", value, Node.State(value))
             return Node.State(value)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         node = self.nav_graph.get_node_from_position((x, y))
-        if node is not None:
-            forward = scroll_y > 0
-            state = self.get_next_node_state_from_scroll(forward, node)
-            if state is not None:
-                self.nav_graph.set_node_state(node, state)
-                print(node.state)
+        if node:
+            self.accumulated_scroll_y += scroll_y
+            if abs(self.accumulated_scroll_y) > 1:
+                forward = self.accumulated_scroll_y > 0
+                state = self.get_next_node_state_from_scroll(forward, node)
+                if state is not None:
+                    self.nav_graph.set_node_state(node, state)
+                    print(node.state)
+                self.accumulated_scroll_y = 0.0
 
-
-    def get_invert_coordinate_signs(self, point):
+    def get_invert_coordinates(self, point):
         return -point[0], -point[1]
 
-
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if self.dragged_nodes:
-            for i in range(len(self.dragged_nodes)):
-                start_pos = self.dragged_node_start_positions[i]
-                click_start = self.drag_click_start
-                node = self.dragged_nodes[i]
-                diff = lib.sum_points(self.get_invert_coordinate_signs(click_start), (x, y))
-                moved_pos = lib.sum_points(diff, start_pos)
-                self.nav_graph.move_node(node, moved_pos)
-        # if buttons & mouse.LEFT & mouse.RIGHT:
-        #     is_drag_start = False
-        #     if self.dragged_node is None:
-        #         self.dragged_node = self.nav_graph.get_node_from_position((x, y))
-        #         is_drag_start = True
-        #     if self.dragged_node is not None:
-        #         if is_drag_start:
-        #             self.nav_graph.select_node(self.dragged_node)
-        #             self.dragged_node_start_position = self.dragged_node.get_position()
-        #         #     self.drag_click_offset = lib.sum_points(self.dragged_node_start_position, (-x, -y))
-        #         # dx, dx = self.drag_click_offset
-        #         self.nav_graph.move_node(self.dragged_node, (x, y))
-        #     else:
-        #         print("Unused dragged pos: {0}, delta={1}".format((x, y), (dx, dy)))
-        pass
+        if buttons & mouse.MIDDLE:
+            if self.dragged_nodes:
+                for i in range(len(self.dragged_nodes)):
+                    start_pos = self.dragged_node_start_positions[i]
+                    node = self.dragged_nodes[i]
+                    diff = lib.sum_points(self.get_invert_coordinates(self.drag_click_start), (x, y))
+                    moved_pos = lib.sum_points(diff, start_pos)
+                    self.nav_graph.move_node(node, moved_pos)
 
     def on_mouse_release(self, x, y, button, modifiers):
-        def reset_node_dragging():
-            self.drag_click_start = None
-            self.dragged_nodes = None
-            self.dragged_node_start_positions = None
-        reset_node_dragging()
+        if button == mouse.MIDDLE:
+            def reset_node_dragging():
+                self.drag_click_start = None
+                self.dragged_nodes = None
+                self.dragged_node_start_positions = None
+            reset_node_dragging()
 
     def on_mouse_press(self, x, y, button, modifiers):
         node = self.nav_graph.get_node_from_position((x, y))
+        selected_nodes = self.nav_graph.get_selected_nodes()
+
+        if node:
+            print("Node clicked: {0}".format(node.label))
 
         if button == mouse.MIDDLE:
 
-            if node in self.nav_graph.selected_nodes:
+            if node in selected_nodes:
                 def set_dragged_node():
                     if self.dragged_nodes is None:
-                        self.dragged_nodes = self.nav_graph.selected_nodes
+                        self.dragged_nodes = selected_nodes
                         self.drag_click_start = (x, y)
                         self.dragged_node_start_positions = []
                         for selected_node in self.dragged_nodes:
@@ -224,24 +215,23 @@ class MainWindow(BaseWindow):
         if button == mouse.LEFT:
 
             if Plib.is_ctrl_pressed(self.pressed_keys):
-                self.nav_graph.select_node(node)
-                # self.nav_graph.select_node_at_position((x, y))
+                self.nav_graph.toggle_select(node)
             elif Plib.is_alt_pressed(self.pressed_keys):
                 self.nav_graph.remove_node(node)
             elif self.pressed_keys[key.S]:
                 self.nav_graph.set_start_node(node)
             elif self.pressed_keys[key.D]:
                 self.nav_graph.set_destination_node(node)
-            elif node is not None:
-                    self.nav_graph.deselect_all_nodes()
-                    self.nav_graph.select_node(node)
+            elif node:
+                self.nav_graph.deselect_all_nodes()
+                self.nav_graph.toggle_select(node)
             else:
                 self.nav_graph.deselect_all_nodes()
 
         if button == mouse.RIGHT:
 
             if Plib.is_ctrl_pressed(self.pressed_keys):
-                if not self.nav_graph.selected_nodes:
+                if not selected_nodes:
                     self.nav_graph.add_node(Node(x, y))
                 else:
                     if not Plib.is_shift_pressed(self.pressed_keys):
@@ -250,20 +240,20 @@ class MainWindow(BaseWindow):
                         self.nav_graph.create_edge_to_selected_from(node)
 
             elif Plib.is_alt_pressed(self.pressed_keys):
-                if not self.nav_graph.selected_nodes:
+                if not selected_nodes:
                     self.nav_graph.remove_node(node)
                 else:
                     if not Plib.is_shift_pressed(self.pressed_keys):
-                        self.nav_graph.remove_edges_from_many(node, self.nav_graph.selected_nodes)
+                        self.nav_graph.remove_edges_from_many(node, selected_nodes)
                     else:
-                        self.nav_graph.remove_edges_to_many(node, self.nav_graph.selected_nodes)
+                        self.nav_graph.remove_edges_to_many(node, selected_nodes)
             else:
 
                 if node is None:
                     self.nav_graph.add_node(Node(x, y))
                 else:
                     def all_selected_has_edge():
-                        for selected_node in self.nav_graph.selected_nodes:
+                        for selected_node in selected_nodes:
                             has_uv = self.nav_graph.graph.has_edge(selected_node, node)
                             has_vu = self.nav_graph.graph.has_edge(node, selected_node)
                             if not has_uv or not has_vu:
@@ -273,8 +263,8 @@ class MainWindow(BaseWindow):
                         self.nav_graph.create_edge_to_selected_from(node)
                         self.nav_graph.create_edge_from_selected_to(node)
                     else:
-                        self.nav_graph.remove_edges_to_many(node, self.nav_graph.selected_nodes)
-                        self.nav_graph.remove_edges_from_many(node, self.nav_graph.selected_nodes)
+                        self.nav_graph.remove_edges_to_many(node, selected_nodes)
+                        self.nav_graph.remove_edges_from_many(node, selected_nodes)
 
     def on_resize(self, width, height):
         self.background_image.width = width

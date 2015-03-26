@@ -11,6 +11,15 @@ class Node:
         Start = 1
         Destination = 2
 
+    @staticmethod
+    def get_state_color(state):
+        states_colors = {
+            Node.State.Default: config.world.node_color,
+            Node.State.Start: config.world.start_node_color,
+            Node.State.Destination: config.world.destination_node_color,
+            }
+        return states_colors[state]
+
     def __init__(self, x, y, altitude=0, content=None, is_selected=False):
         self.current_radius = config.world.node_radius
         self.default_color = config.world.node_color
@@ -25,15 +34,22 @@ class Node:
         self.circle = shapelib.Circle((x, y), self.current_radius, self.current_color)
         self.select_circle = None
         self.state = self.State.Default
-        self.is_selected = is_selected
+        self._is_selected = is_selected
 
-    def set_as_selected(self, is_selected=True):
-        self.is_selected = is_selected
+    def set_as_selected(self, selected):
+        self._is_selected = selected
+        self.update_selected_indicator()
+
+    def is_selected(self):
+        return self._is_selected
 
     def update_selected_indicator(self):
         selected_radius = self.get_radius() + config.world.selected_radius_increase
         color = config.world.selected_node_color
-        self.select_circle = shapelib.Circle(position=self.get_position(), radius=selected_radius, color=color)
+        if self.select_circle is None:
+            self.select_circle = shapelib.Circle(position=self.get_position(), radius=selected_radius, color=color)
+        self.select_circle.set_radius(selected_radius)
+        self.select_circle.set_color(color)
 
     def set_radius(self, new_radius):
         self.current_radius = new_radius
@@ -42,6 +58,7 @@ class Node:
 
     def set_state(self, state):
         print("Setting new state: {0}".format(state))
+        self.set_color(Node.get_state_color(state))
         self.state = state
 
     def set_position(self, new_position):
@@ -68,7 +85,7 @@ class Node:
 
     def get_visual_radius(self):
         extra = 0.0
-        if self.is_selected:
+        if self.is_selected():
             extra += config.world.selected_radius_increase
         return self.get_radius()+extra
 
@@ -76,7 +93,7 @@ class Node:
         return self.x, self.y
 
     def draw_selected_indicator(self, batch=None):
-        if self.is_selected:
+        if self.is_selected():
             if self.select_circle is None:
                 self.update_selected_indicator()
             self.select_circle.draw(batch)

@@ -33,7 +33,7 @@ class Edge:
 
         def get_pos_offset(node):
             offset_radius = config.world.edge_lane_offset
-            if node.is_selected and config.world.adjust_edge_to_selection:
+            if node.is_selected() and config.world.adjust_edge_to_selection:
                 offset_radius += config.world.selected_radius_decrease
             dx = offset_radius * math.sin(theta)
             dy = offset_radius * math.cos(theta)

@@ -14,13 +14,11 @@ from app.classes.pathfinder import AStarPathfinder
 class NavigationGraph:
     def __init__(self):
         self.graph = nx.DiGraph()
-        self.selected_nodes = []
+        # self.selected_nodes = []
         self.pathfinder = AStarPathfinder(self.graph)
-        self.states_color = {
-            Node.State.Default: config.world.node_color,
-            Node.State.Start: config.world.start_node_color,
-            Node.State.Destination: config.world.destination_node_color,
-            }
+
+    def get_selected_nodes(self):
+        return [node for node in self.graph.nodes() if node.is_selected()]
 
     @staticmethod
     def get_node_distance(from_node, to_node):
@@ -43,12 +41,8 @@ class NavigationGraph:
                 return node
         return None
 
-    def update_node_color(self, node):
-        node.set_color(self.states_color[node.state])
-
     def _set_node_state(self, node, state):
         node.set_state(state)
-        self.update_node_color(node)
 
     def set_node_state(self, node, state):
         if node:
@@ -70,6 +64,9 @@ class NavigationGraph:
             self.set_node_to_default(self.pathfinder.start_node)
             self.pathfinder.set_start_node(node)
             self._set_node_state(node, Node.State.Start)
+        else:
+            print("Nope! Cannot set start node: {0}, existing: {1}"
+                  .format(node, self.pathfinder.start_node))
 
     def set_destination_node(self, node):
         if node and node != self.pathfinder.destination_node:
@@ -77,13 +74,16 @@ class NavigationGraph:
             self.set_node_to_default(self.pathfinder.destination_node)
             self.pathfinder.set_destination_node(node)
             self._set_node_state(node, Node.State.Destination)
+        else:
+            print("Nope! Cannot set destination node: {0}, existing: {1}"
+                  .format(node, self.pathfinder.destination_node))
 
     def create_edge_from_selected_to(self, node):
-        for selected_node in self.selected_nodes:
+        for selected_node in self.get_selected_nodes():
             self.add_edge(selected_node, node)
 
     def create_edge_to_selected_from(self, node):
-        for selected_node in self.selected_nodes:
+        for selected_node in self.get_selected_nodes():
             self.add_edge(node, selected_node)
 
     def update_node_edges(self, node):
@@ -96,19 +96,29 @@ class NavigationGraph:
             update_edge_shape(node, neighbor_node)
             update_edge_shape(neighbor_node, node)
 
+    def toggle_select(self, node, compare=None):
+        if compare is None:
+            compare = node.is_selected()
+        if compare:
+            self.deselect_node(node)
+        else:
+            self.select_node(node)
+
     def select_node(self, node):
         if not node:
             return False
-        added = lib.try_append(self.selected_nodes, node)
-        node.set_as_selected(is_selected=True)
+        # added = lib.try_append(self.selected_nodes, node)
+        added = not node.is_selected()
+        node.set_as_selected(selected=True)
         self.update_node_edges(node)
         return added
 
     def deselect_node(self, node):
         if not node:
             return False
-        removed = lib.try_remove(self.selected_nodes, node)
-        node.set_as_selected(is_selected=False)
+        # removed = lib.try_remove(self.selected_nodes, node)
+        removed = node.is_selected()
+        node.set_as_selected(selected=False)
         self.update_node_edges(node)
         return removed
 
@@ -125,9 +135,9 @@ class NavigationGraph:
                 self.select_node(node)
 
     def deselect_all_nodes(self):
-        for node in self.selected_nodes:
-            self.deselect_node(node)
-        self.selected_nodes = []
+        for node in self.get_selected_nodes():
+            removed = self.deselect_node(node)
+            print("Remove selection from node: {0}".format(removed))
 
     def get_edge_cost(self, from_node, to_node):
         return self.get_node_distance(from_node, to_node)
@@ -149,6 +159,7 @@ class NavigationGraph:
         if node is None:
             return False
         self.deselect_node(node)
+        self.remove_all_node_edges(node)
         try:
             self.graph.remove_node(node)
             return True
@@ -168,12 +179,11 @@ class NavigationGraph:
     def remove_edge(self, from_node, to_node):
         if from_node is None or to_node is None:
             return False
-        if self.graph.has_edge(from_node, to_node):
-            try:
-                self.graph.remove_edge(from_node, to_node)
-                return True
-            except nx.NetworkXError:
-                return False
+        try:
+            self.graph.remove_edge(from_node, to_node)
+            return True
+        except nx.NetworkXError:
+            return False
 
     def remove_edges_from_many(self, to_node, from_nodes):
         for from_node in from_nodes:
@@ -183,19 +193,31 @@ class NavigationGraph:
         for to_node in to_nodes:
             self.remove_edge(from_node, to_node)
 
+    def remove_all_node_edges(self, node):
+        for u, v in self.graph.edges():
+            if u == node or v == node:
+                self.graph.remove_edge(u, v)
+
     def get_edge_object(self, edge):
         try:
             return self.graph[edge[0]][edge[1]]['object']
         except KeyError:
             return None
 
+    def update_path_nodes(self, dt):
+        if self.pathfinder.start_node:
+            self.pathfinder.start_node.set_color(config.world.start_node_color)
+        if self.pathfinder.destination_node:
+            self.pathfinder.destination_node.set_color(config.world.destination_node_color)
+
     # TODO: batched rendering of primitives
     def draw(self, batch=None):
+        selected_nodes = self.get_selected_nodes()
 
         def draw_selected_nodes():
             def draw_node_as_selected(node):
                 node.draw_selected_indicator()
-            for selected_node in self.selected_nodes:
+            for selected_node in selected_nodes:
                 draw_node_as_selected(selected_node)
         draw_selected_nodes()
 
@@ -205,8 +227,8 @@ class NavigationGraph:
                 node_instance = node
                 if is_reading_data:
                     node_instance = node[0]
-                # node_instance.draw(batch)
-                if node_instance in self.selected_nodes:
+
+                if node_instance in selected_nodes:
                     node_instance.draw(radius_offset=config.world.selected_radius_decrease)
                 else:
                     node_instance.draw()
@@ -218,5 +240,5 @@ class NavigationGraph:
         draw_edges()
 
     def update(self, dt):
+        self.update_path_nodes(dt)
         pass
-

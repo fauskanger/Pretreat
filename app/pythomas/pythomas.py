@@ -15,7 +15,7 @@ def try_remove(the_list, element):
 
 
 def try_append(the_list, element):
-    if not element:
+    if element is None:
         return False
     try:
         the_list.append(element)

@@ -9,9 +9,13 @@ class Pathfinder:
         self.path = None
 
     def set_start_node(self, node):
+        if self.destination_node == node:
+            self.destination_node = None
         self.start_node = node
 
     def set_destination_node(self, node):
+        if self.start_node == node:
+            self.start_node = None
         self.destination_node = node
 
     def clear_node(self, node):
