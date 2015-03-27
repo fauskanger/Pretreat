@@ -5,7 +5,7 @@ from app.config import config
 
 
 class Shape(object):
-    def __init__(self, position, color=None, color_list=None, mode=pyglet.gl.GL_POLYGON):
+    def __init__(self, position, color=None, color_list=None, mode=pyglet.gl.GL_POLYGON, anchor=None):
         self.x = int(position[0])
         self.y = int(position[1])
         self.vertex_list = None
@@ -17,19 +17,17 @@ class Shape(object):
         if color is not None:
             self.color_list = None
         self.mode = mode
-        self.rotation_anchor = self.get_position()
+        self.rotation_anchor = self.get_position() if not anchor else anchor
 
-    def set_position(self, new_position, translate=True):
+    def set_position(self, new_position):
         translation = new_position[0] - self.x, new_position[1] - self.y
         self.x = int(new_position[0])
         self.y = int(new_position[1])
         self.set_anchor(lib.sum_points(translation, self.rotation_anchor))
-        if translate:
-            self.translate = translation
         self.update_shape()
 
     def move(self, translation):
-        self.set_position(lib.sum_points(self.get_position(), translation), translate=True)
+        self.set_position(lib.sum_points(self.get_position(), translation))
 
     def set_anchor(self, anchor_point):
         self.rotation_anchor = anchor_point
@@ -183,29 +181,30 @@ class Rectangle(Shape):
 
 class Triangle(Shape):
     def __init__(self, base_center, base_width, height=None, rotation=0.0,
-                 anchor_base_center=True, colors_list=None, color=None):
+                 colors_list=None, color=None, anchor=None):
         Shape.__init__(self, position=base_center,
-                       color=color, color_list=colors_list, mode=pyglet.gl.GL_TRIANGLES)
+                       color=color, color_list=colors_list, mode=pyglet.gl.GL_TRIANGLES, anchor=anchor)
         if height is None:
             height = base_width * 0.866  # math.sqrt(3)/2
         self.width = base_width
         self.height = height
-        self.anchor_is_base_center = anchor_base_center
         self.rotation = rotation
         self.update_shape()
 
     @staticmethod
     def create_with_centroid(centroid, base_width, height=None, rotation=0.0,
-                             anchor_base_center=False, colors_list=None, color=None):
+                             colors_list=None, color=None):
         if height is None:
             height = base_width * 0.866  # math.sqrt(3)/2
         base_left = centroid[0] - base_width/2, centroid[1]
         base_right = centroid[0] + base_width/2, centroid[1]
         tip = centroid[0], centroid[1] + height
+        desired_centroid = centroid
         current_centroid = lib.average_list_of_points([base_right, base_left, tip])
-        offset = lib.subtract_points(centroid, current_centroid)
-        correct_base_center = lib.sum_points(centroid, offset)
-        triangle = Triangle(correct_base_center, base_width, height, rotation, anchor_base_center, colors_list, color)
+        offset = lib.subtract_points(current_centroid, desired_centroid)
+        position = lib.subtract_points(centroid, offset)
+        triangle = Triangle(position, base_width, height, rotation,
+                            colors_list, color, anchor=centroid)
         triangle.set_anchor(centroid)
         return triangle
 

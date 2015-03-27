@@ -76,12 +76,12 @@ class Edge:
     def update_circles(self, from_circle_point, to_circle_point):
         if from_circle_point is not None:
             if self.p1_circle:
-                self.p1_circle.set_position(from_circle_point, translate=False)
+                self.p1_circle.set_position(from_circle_point)
             else:
                 self.p1_circle = shapelib.Circle(from_circle_point, config.world.edge_end_radius, lib.colors.blue)
         if to_circle_point is not None:
             if self.p2_circle:
-                self.p2_circle.set_position(to_circle_point, translate=False)
+                self.p2_circle.set_position(to_circle_point)
             else:
                 self.p2_circle = shapelib.Circle(to_circle_point, config.world.edge_end_radius, lib.colors.red)
 
