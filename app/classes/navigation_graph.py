@@ -215,6 +215,11 @@ class NavigationGraph:
     def draw(self, batch=None):
         selected_nodes = self.get_selected_nodes()
 
+        def draw_path():
+            if self.pathfinder:
+                self.pathfinder.draw()
+        draw_path()
+
         def draw_selected_nodes():
             def draw_node_as_selected(node):
                 node.draw_selected_indicator()
@@ -243,3 +248,7 @@ class NavigationGraph:
     def update(self, dt):
         self.update_path_nodes(dt)
         pass
+
+    def start_pathfinding(self):
+        if self.pathfinder:
+            self.pathfinder.get_path()

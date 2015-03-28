@@ -31,6 +31,15 @@ def for_each_node_in(graph, lambda_method, is_reading_data=False):
         lambda_method(node)
 
 
+def interpolate_point(from_point, to_point, fraction):  # fraction is float in range [0, 1]
+    x1, y1 = from_point
+    x2, y2 = to_point
+    x = fraction * (x2-x1) + x1
+    a = (y2-y1)/(x2-x1)
+    y = a*(x - x1) + y1
+    return x, y
+
+
 def get_circle_points(center=(0.0, 0.0), radius=1.0, number_of_points=32, include_center=False, repeat=True):
     points_list = []
     for i in range(number_of_points):
@@ -273,6 +282,14 @@ def sum_points(p, q):
 def subtract_points(p, q):
     return p[0]-q[0], p[1]-q[1]
 
+
+def multiply_points(p, q):
+    return p[0]*q[0], p[1]*q[1]
+
+
+def divide_points(p, q):
+    return p[0]/q[0], p[1]/q[1]
+
 colors = Colors()
 
 
@@ -282,6 +299,11 @@ from pyglet.window import key
 
 # pyglet-specific library
 class PygletLib:
+    # Abstract observer class
+    class Observer(object):
+        def __init__(self, subject):
+            subject.push_handlers(self)
+
     @staticmethod
     def is_shift(modifiers):
         return modifiers & (key.LSHIFT | key.RSHIFT)

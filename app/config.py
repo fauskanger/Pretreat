@@ -229,10 +229,11 @@ class Configurations():
             self.base_edge_chance = 1
             self.number_of_edge_types = 5
 
-            self.color_mode = 'c3B'
+            self.color_mode = 'c3B'  # 'c4B' to include alpha, but some parts explicitly expect 3-tuples
             self.node_color = colors.gray_EE
             self.edge_color = self.node_color
             self.edge_in_node_color = colors.gray_66
+            self.edge_triangle_color = colors.extra.white
             self.selected_node_color = colors.extra.orange_red
             self.start_node_color = colors.cyan
             self.destination_node_color = colors.magenta
@@ -243,9 +244,10 @@ class Configurations():
             self.selected_radius_decrease = 5  # How much the node circle will shrink
             self.node_padding = 10
 
-            self.edge_thickness = 5
+            self.edge_thickness = 3
             self.edge_end_radius = self.edge_thickness
-            self.edge_lane_offset = self.edge_thickness
+            self.edge_triangles_width = 4*self.edge_thickness
+            self.edge_lane_offset = max(self.edge_thickness, self.edge_triangles_width)*0.61
             self.adjust_edge_to_selection = True
 
             self.default_rand_seed = 13

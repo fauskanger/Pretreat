@@ -6,8 +6,8 @@ from app.config import config
 
 class Shape(object):
     def __init__(self, position, color=None, color_list=None, mode=pyglet.gl.GL_POLYGON, anchor=None):
-        self.x = int(position[0])
-        self.y = int(position[1])
+        self.x = position[0]
+        self.y = position[1]
         self.vertex_list = None
         self.draw_points_list = None  # self.create_draw_points()
         self.vertex_list = None  # self.create_vertex_list()
@@ -18,6 +18,10 @@ class Shape(object):
             self.color_list = None
         self.mode = mode
         self.rotation_anchor = self.get_position() if not anchor else anchor
+
+    def delete(self):
+        if self.vertex_list:
+            self.vertex_list.delete()
 
     def set_position(self, new_position):
         translation = new_position[0] - self.x, new_position[1] - self.y
@@ -156,11 +160,6 @@ class Rectangle(Shape):
         self.end_point = end_point
         self.width = math.sqrt(a*a + b*b)
         self.height = radius
-        # if color is not None:
-        #     self.color_list = list(color * 4)
-        # elif colors_list is None:
-        #     colors_list = list(colors.white)
-        # self.colors_list = colors_list
         self.update_shape()
 
     def create_draw_points(self):
@@ -222,10 +221,12 @@ class Triangle(Shape):
         return rotated_triangle_points
 
     def set_height(self, height):
-        pass
+        self.height = height
+        self.update_shape()
 
     def set_width(self, width):
-        pass
+        self.width = width
+        self.update_shape()
 
 
 

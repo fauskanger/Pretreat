@@ -112,6 +112,12 @@ class Node:
     def set_color(self, color):
         self.circle.set_color(color)
 
+    def delete(self):
+        if self.circle:
+            self.circle.delete()
+        if self.select_circle:
+            self.select_circle.delete()
+
     def update(self, dt):
         pass
 
