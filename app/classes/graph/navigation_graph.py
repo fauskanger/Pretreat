@@ -14,7 +14,7 @@ class NavigationGraph():
     def __init__(self):
         self.graph = nx.DiGraph()
         # self.selected_nodes = []
-        self.pathfinder = PretreatPathfinder(self.graph)
+        self.pathfinder = AStarPathfinder(self.graph)
         self.pathfinder.push_handlers(self)
         self.node_positions_dirty = False
         self.node_set_dirty = False
@@ -27,6 +27,10 @@ class NavigationGraph():
                 edge = self.get_edge_object(edge_tuple)
                 is_path_edge = edge_tuple in path_edge_tuples
                 edge.set_as_path_edge(is_path_edge=is_path_edge)
+        path_nodes = [] if not path else path.get_node_list()
+        for node in self.graph.nodes():
+            is_path_node = node in path_nodes
+            node.set_as_path_node(is_path_node=is_path_node)
 
     def get_selected_nodes(self):
         return [node for node in self.graph.nodes() if node.is_selected()]
@@ -273,6 +277,7 @@ class NavigationGraph():
                 if is_reading_data:
                     node_instance = node[0]
 
+                node_instance.draw_path()
                 if node_instance in selected_nodes:
                     node_instance.draw(radius_offset=config.world.selected_radius_decrease)
                 else:
@@ -310,3 +315,4 @@ class NavigationGraph():
     def update_path(self):
         if self.pathfinder:
             self.pathfinder.update_to_new_path()
+            

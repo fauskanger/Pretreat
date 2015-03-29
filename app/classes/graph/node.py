@@ -37,10 +37,11 @@ class Node:
         self.altitude = altitude
         self.content = content
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
-        self.printed = False
         self.circle = shapelib.Circle((x, y), self.current_radius, self.current_color)
+        self.path_circle = None
         self.select_circle = None
         self.state = self.State.Default
+        self.is_path_node = False
         self._is_selected = is_selected
 
     def get_distance_to(self, node):
@@ -53,6 +54,17 @@ class Node:
     def set_as_selected(self, selected):
         self._is_selected = selected
         self.update_selected_indicator()
+
+    def set_as_path_node(self, is_path_node=True):
+        self.is_path_node = is_path_node
+        if is_path_node:
+                pos = self.get_position()
+                radius = self.get_visual_radius()+5
+                color = config.world.path_edge_color
+                if not self.path_circle:
+                    self.path_circle = shapelib.Circle(pos, radius, color)
+                self.path_circle.set_position(pos)
+                self.path_circle.set_radius(radius)
 
     def is_selected(self):
         return self._is_selected
@@ -116,6 +128,10 @@ class Node:
         if self.text_label:
             self.text_label.draw()
 
+    def draw_path(self):
+        if self.is_path_node and self.path_circle:
+            self.path_circle.draw()
+
     def draw(self, radius_offset=0.0, batch=None):
         def draw_circle():
             if radius_offset == 0.0:
@@ -135,6 +151,8 @@ class Node:
             self.circle.delete()
         if self.select_circle:
             self.select_circle.delete()
+        if self.path_circle:
+            self.path_circle.delete()
 
     def update(self, dt):
         pass

@@ -43,8 +43,9 @@ class Path:
         self.update_node_circles()
 
     def draw(self, batch=None):
-        for key in self.circles:
-            self.circles[key].draw(batch)
+        pass
+        # for key in self.circles:
+        #     self.circles[key].draw(batch)
 
     def delete(self):
         for key in self.circles:

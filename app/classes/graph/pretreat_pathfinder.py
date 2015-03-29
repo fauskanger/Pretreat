@@ -12,12 +12,9 @@ from app.classes.graph.pathfinder import CustomPathfinder
 
 class PretreatPathfinder(CustomPathfinder):
     def __init__(self, graph):
-        super().__init__(graph)
-        self.name = "Pretreat Pathfinder"
+        super().__init__(graph, "Pretreat Pathfinder")
         self.evaluated_nodes = []
         self.to_visit = []
-        self.speed = 1  # Steps per second
-        self.ticks_counter = 0
         if False:
             self.graph = nx.DiGraph()
 
@@ -25,28 +22,11 @@ class PretreatPathfinder(CustomPathfinder):
         print("Tick the pathfinder")
         pass
 
-    def _update(self, dt):
-        self.ticks_counter += dt * self.speed
-        ticks = int(self.ticks_counter)
-        if ticks > 0:
-            for t in range(ticks):
-                self.tick()
-            self.ticks_counter -= ticks
+    def complete_search(self):
+        pass
 
     def create_path(self):
         return self.path
-
-    def start(self):
-        pass
-
-    def pause(self):
-        pass
-
-    def step(self, step_count=1):
-        pass
-
-    def stop(self):
-        pass
 
 
 def astar_path(G, source, target, heuristic=None, weight='weight'):

@@ -250,7 +250,7 @@ class Configurations():
             self.node_radius = 25
             self.selected_radius_increase = max(0.3 * self.node_radius, 10)  # For the outer circle radius
             self.selected_radius_decrease = 0.61 * self.selected_radius_increase  # How much the node circle will shrink
-            self.node_padding = 2/3 * self.node_radius
+            self.node_padding = 1/3 * self.node_radius
 
             self.edge_thickness = self.node_radius/7
             self.edge_end_radius = self.edge_thickness

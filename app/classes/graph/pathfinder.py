@@ -9,12 +9,16 @@ from app.classes.graph.path import Path
 
 
 class Pathfinder(pyglet.event.EventDispatcher):
+    @staticmethod
+    def get_event_type_on_path_update():
+        return strings.events.on_path_update
+
     def __init__(self, graph):
         self.graph = graph
         self.start_node = None
         self.destination_node = None
         self.path = None
-        self.register_event_type(strings.events.on_path_update)
+        self.register_event_type(Pathfinder.get_event_type_on_path_update())
 
     def get_path(self):
         if self.path is None:
@@ -48,8 +52,12 @@ class Pathfinder(pyglet.event.EventDispatcher):
             self.update_to_new_path()
 
     def update_to_new_path(self):
-        self.path = self.create_path()
-        self.dispatch_event(strings.events.on_path_update, self.path)
+        new_path = self.create_path()
+        if not self.path or new_path != self.path:
+            event_type = Pathfinder.get_event_type_on_path_update()
+            # print("Custom event: {0} - {1}".format(event_type, [node.label for node in new_path.get_node_list()]))
+            self.path = new_path
+            self.dispatch_event(event_type, self.path)
 
     def create_path(self):
         return None
@@ -81,8 +89,8 @@ class Pathfinder(pyglet.event.EventDispatcher):
             return self.path.get_node_list()
         return []
 
-# Register event type to class
-Pathfinder.register_event_type(strings.events.on_path_update)
+# # Register event type to class
+# Pathfinder.register_event_type(strings.events.on_path_update)
 
 
 class AStarPathfinder(Pathfinder):
@@ -113,24 +121,48 @@ class CustomPathfinder(Pathfinder):
         Paused = 2
         Stopped = 3
 
-    def __init__(self, graph):
+    def __init__(self, graph, name):
         Pathfinder.__init__(self, graph)
+        self.name = name
         self.is_complete = False
+        self.use_steps = False
+        self.speed = 1  # Steps per second
+        self.ticks_counter = 0
+        self.running = False
 
     def _update(self, dt):
+        if self.running:
+            if self.use_steps:
+                    self.ticks_counter += dt * self.speed
+                    ticks = int(self.ticks_counter)
+                    if ticks > 0:
+                        for t in range(ticks):
+                            self.tick()
+                        self.ticks_counter -= ticks
+            else:
+                self.complete_search()
+
+    def tick(self):
+        pass
+
+    def complete_search(self):
         pass
 
     def create_path(self):
         return self.path
 
     def start(self):
-        pass
+        self.running = True
 
     def pause(self):
-        pass
+        self.running = False
+
+    def toggle_pause(self):
+        self.running = not self.running
 
     def step(self, step_count=1):
-        pass
+        for i in range(step_count):
+            self.tick()
 
     def stop(self):
         pass
