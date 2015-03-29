@@ -1,21 +1,27 @@
 import math
-import pyglet
+
 import networkx as nx
-from enum import Enum
 
 from app.config import config
 from app.pythomas import pythomas as lib
-from app.pythomas import shapes as shapelib
-from app.classes.node import Node
-from app.classes.edge import Edge
-from app.classes.pathfinder import AStarPathfinder
+from app.classes.graph.node import Node
+from app.classes.graph.edge import Edge
+from app.classes.graph.pathfinder import AStarPathfinder
 
 
-class NavigationGraph:
+class NavigationGraph():
     def __init__(self):
         self.graph = nx.DiGraph()
         # self.selected_nodes = []
         self.pathfinder = AStarPathfinder(self.graph)
+        self.pathfinder.push_handlers(self)
+        self.node_positions_dirty = False
+        self.node_set_dirty = False
+        self.select_dirty = False
+
+    def on_path_update(self, path):
+        # print("Path updated. {0}".format([node.label for node in path.get_node_list()]))
+        pass
 
     def get_selected_nodes(self):
         return [node for node in self.graph.nodes() if node.is_selected()]
@@ -88,11 +94,17 @@ class NavigationGraph:
 
     def update_node_edges(self, node):
         for neighbor_node in nx.all_neighbors(self.graph, node):
+            def update_edge_weight(from_node, to_node):
+                cost = self.pathfinder.get_edge_cost(from_node, to_node)
+                self.graph[from_node][to_node][config.strings.wgt] = cost
+
             def update_edge_shape(from_node, to_node):
                 edge = self.get_edge_object((from_node, to_node))
-                if edge is not None:
+                if edge:
                     edge.update_shape()
 
+            update_edge_weight(node, neighbor_node)
+            update_edge_weight(neighbor_node, node)
             update_edge_shape(node, neighbor_node)
             update_edge_shape(neighbor_node, node)
 
@@ -111,6 +123,7 @@ class NavigationGraph:
         # added = lib.try_append(self.selected_nodes, node)
         added = not node.is_selected()
         node.set_as_selected(selected=True)
+        self.select_dirty = True
         self.update_node_edges(node)
         return added
 
@@ -120,6 +133,7 @@ class NavigationGraph:
         # removed = lib.try_remove(self.selected_nodes, node)
         removed = node.is_selected()
         node.set_as_selected(selected=False)
+        self.select_dirty = True
         self.update_node_edges(node)
         return removed
 
@@ -138,15 +152,14 @@ class NavigationGraph:
     def deselect_all_nodes(self):
         for node in self.get_selected_nodes():
             removed = self.deselect_node(node)
-            print("Remove selection from node: {0}".format(removed))
-
-    def get_edge_cost(self, from_node, to_node):
-        return self.get_node_distance(from_node, to_node)
+            # print("Remove selection from node: {0}".format(removed))
 
     def add_node(self, node):
         if node is None or not self.is_valid_node_position(node.get_position()):
             return False
         self.graph.add_node(node)
+        self.node_set_dirty = True
+        self.update_node_labels()
         return True
 
     def move_node(self, node, position):
@@ -154,6 +167,7 @@ class NavigationGraph:
             return False
 
         node.set_position(position)
+        self.node_positions_dirty = True
         self.update_node_edges(node)
 
     def remove_node(self, node):
@@ -163,6 +177,10 @@ class NavigationGraph:
         self.remove_all_node_edges(node)
         try:
             self.graph.remove_node(node)
+            self.node_set_dirty = True
+            if self.pathfinder:
+                self.pathfinder.clear_node(node)
+            self.update_node_labels()
             return True
         except nx.NetworkXError:
             return False
@@ -171,8 +189,9 @@ class NavigationGraph:
         if from_node is None or to_node is None or from_node == to_node:
             return False
         try:
-            weight = self.get_edge_cost(from_node, to_node)
+            weight = self.pathfinder.get_edge_cost(from_node, to_node)
             self.graph.add_edge(from_node, to_node, weight=weight, object=Edge(from_node, to_node))
+            self.node_set_dirty = True
             return True
         except nx.NetworkXError:
             return False
@@ -182,6 +201,7 @@ class NavigationGraph:
             return False
         try:
             self.graph.remove_edge(from_node, to_node)
+            self.node_set_dirty = True
             return True
         except nx.NetworkXError:
             return False
@@ -205,15 +225,28 @@ class NavigationGraph:
         except KeyError:
             return None
 
-    def update_path_nodes(self, dt):
-        if self.pathfinder.start_node:
-            self.pathfinder.start_node.set_color(config.world.start_node_color)
-        if self.pathfinder.destination_node:
-            self.pathfinder.destination_node.set_color(config.world.destination_node_color)
+    def update_node_labels(self):
+        count = self.graph.number_of_nodes()
+        all_labels = [str(i) for i in range(1, count+1)]
+        used_labels = []
+        unlabeled_nodes = []
+        for node in self.graph.nodes():
+            if node.label and int(node.label) <= count:
+                used_labels.append(node.label)
+            else:
+                unlabeled_nodes.append(node)
+
+        unused_labels = [str(label) for label in all_labels if str(label) not in used_labels]
+
+        for i in range(len(unlabeled_nodes)):
+            node = unlabeled_nodes[i]
+            label = unused_labels[i]
+            node.set_label(label)
 
     # TODO: batched rendering of primitives
     def draw(self, batch=None):
         selected_nodes = self.get_selected_nodes()
+        path_edges = self.pathfinder.get_path_edges()
 
         def draw_path():
             if self.pathfinder:
@@ -242,13 +275,32 @@ class NavigationGraph:
 
         def draw_edges():
             for edge in self.graph.edges(data=True):
-                self.get_edge_object(edge).draw(batch)
+                if edge in path_edges:
+                    pass
+                else:
+                    self.get_edge_object(edge).draw(batch)
         draw_edges()
 
+        def draw_node_labels():
+            for node in self.graph.nodes():
+                node.draw_label()
+        draw_node_labels()
+
     def update(self, dt):
-        self.update_path_nodes(dt)
-        pass
+        any_dirty = self.node_positions_dirty or self.node_set_dirty or self.select_dirty
+
+        if self.pathfinder and any_dirty:
+            self.pathfinder.update_to_new_path()
+        else:
+            self.pathfinder.update(dt)
+
+        self.node_positions_dirty = False
+        self.node_set_dirty = False
+        self.select_dirty = False
 
     def start_pathfinding(self):
+        self.update_path()
+
+    def update_path(self):
         if self.pathfinder:
-            self.pathfinder.get_path()
+            self.pathfinder.update_to_new_path()

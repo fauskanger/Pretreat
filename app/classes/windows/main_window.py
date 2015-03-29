@@ -3,8 +3,8 @@ from pyglet.window import key, mouse
 
 from app.config import config
 from app.pythomas import pythomas as lib
-from app.classes.agent import SuperAgent
-from app.classes.navigation_graph import NavigationGraph, Node
+from app.classes.graph.agent import SuperAgent
+from app.classes.graph.navigation_graph import NavigationGraph, Node
 from app.pythomas.pythomas import PygletLib as Plib
 
 
@@ -140,6 +140,8 @@ class MainWindow(BaseWindow):
     def on_key_press(self, symbol, modifiers):
         if symbol == key.B:
             self.draw_background = not self.draw_background
+        if symbol == key.SPACE:
+            self.nav_graph.start_pathfinding()
 
     def on_key_release(self, symbol, modifiers):
         pass
@@ -195,9 +197,6 @@ class MainWindow(BaseWindow):
     def on_mouse_press(self, x, y, button, modifiers):
         node = self.nav_graph.get_node_from_position((x, y))
         selected_nodes = self.nav_graph.get_selected_nodes()
-
-        if node:
-            print("Node clicked: {0}".format(node.label))
 
         if button == mouse.MIDDLE:
 

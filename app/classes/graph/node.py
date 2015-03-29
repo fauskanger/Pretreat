@@ -2,7 +2,7 @@ import pyglet
 from enum import Enum
 
 from app.config import config
-from app.pythomas import shapes as shapelib
+from app.pythomas import pythomas as lib, shapes as shapelib
 
 
 class Node:
@@ -26,7 +26,14 @@ class Node:
         self.current_color = self.default_color
         self.x = int(x)
         self.y = int(y)
-        self.label = "{0},{1}".format(x, y)
+        self.label = None
+        text_label = "" if not self.label else self.label
+        self.text_label = pyglet.text.Label(text_label,
+                                            font_name='Times New Roman',
+                                            font_size=0.61*self.current_radius,
+                                            x=self.x, y=self.y,
+                                            anchor_x='center', anchor_y='center',
+                                            color=(0, 0, 0, 255))
         self.altitude = altitude
         self.content = content
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
@@ -35,6 +42,13 @@ class Node:
         self.select_circle = None
         self.state = self.State.Default
         self._is_selected = is_selected
+
+    def get_distance_to(self, node):
+        return lib.get_point_distance(self.get_position(), node.get_position())
+
+    def set_label(self, label):
+        self.label = label
+        self.text_label.text = self.label
 
     def set_as_selected(self, selected):
         self._is_selected = selected
@@ -67,13 +81,13 @@ class Node:
         self.x = new_position[0]
         self.y = new_position[1]
         self.circle.set_position(new_position)
+        self.text_label.x, self.text_label.y = new_position
         if self.select_circle is not None:
             self.select_circle.set_position(new_position)
         self.update_parameters()
         return True
 
     def update_parameters(self):
-        self.label = "{0},{1}".format(self.x, self.y)
         pass
 
     def get_radius(self):
@@ -97,6 +111,10 @@ class Node:
             if self.select_circle is None:
                 self.update_selected_indicator()
             self.select_circle.draw(batch)
+
+    def draw_label(self):
+        if self.text_label:
+            self.text_label.draw()
 
     def draw(self, radius_offset=0.0, batch=None):
         def draw_circle():

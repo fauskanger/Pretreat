@@ -182,6 +182,10 @@ class Colors():
 
 class Configurations():
     class Strings():
+        class Events():
+            def __init__(self):
+                self.on_path_update = 'on_path_update'
+
         def __init__(self):
             self.title = 'My Test Application'
             self.resource_path = 'app/resources'
@@ -195,6 +199,8 @@ class Configurations():
             self.wgt = 'weight'
             self.label = 'label'
             self.altitude = 'altitude'
+
+            self.events = self.Events()
 
     class Window():
         def __init__(self):
@@ -239,12 +245,12 @@ class Configurations():
             self.destination_node_color = colors.magenta
             self.node_order_index = 1
 
-            self.node_radius = 20
-            self.selected_radius_increase = 10  # For the outer circle radius
-            self.selected_radius_decrease = 5  # How much the node circle will shrink
-            self.node_padding = 10
+            self.node_radius = 25
+            self.selected_radius_increase = max(0.3 * self.node_radius, 10)  # For the outer circle radius
+            self.selected_radius_decrease = 0.61 * self.selected_radius_increase  # How much the node circle will shrink
+            self.node_padding = 2/3 * self.node_radius
 
-            self.edge_thickness = 3
+            self.edge_thickness = self.node_radius/7
             self.edge_end_radius = self.edge_thickness
             self.edge_triangles_width = 4*self.edge_thickness
             self.edge_lane_offset = max(self.edge_thickness, self.edge_triangles_width)*0.61

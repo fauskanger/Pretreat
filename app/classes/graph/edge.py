@@ -21,8 +21,8 @@ class Edge:
         self.line_rectangle.draw(batch)
         for triangle in self.line_triangles:
             triangle.draw(batch)
-        self.inner_from_shape.draw(batch)
-        self.inner_to_shape.draw(batch)
+        # self.inner_from_shape.draw(batch)
+        # self.inner_to_shape.draw(batch)
         self.from_circle.draw(batch)
         self.to_circle.draw(batch)
 
