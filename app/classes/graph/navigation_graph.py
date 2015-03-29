@@ -7,13 +7,14 @@ from app.pythomas import pythomas as lib
 from app.classes.graph.node import Node
 from app.classes.graph.edge import Edge
 from app.classes.graph.pathfinder import AStarPathfinder
+from app.classes.graph.pretreat_pathfinder import PretreatPathfinder
 
 
 class NavigationGraph():
     def __init__(self):
         self.graph = nx.DiGraph()
         # self.selected_nodes = []
-        self.pathfinder = AStarPathfinder(self.graph)
+        self.pathfinder = PretreatPathfinder(self.graph)
         self.pathfinder.push_handlers(self)
         self.node_positions_dirty = False
         self.node_set_dirty = False
