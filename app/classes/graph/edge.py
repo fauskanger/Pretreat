@@ -15,11 +15,27 @@ class Edge:
         self.to_circle = None
         self.line_rectangle = None
         self.line_triangles = []
+        self.color = config.world.edge_triangle_color
+        self.is_path_edge = False
         self.update_shape()
 
+    def get_from_point(self):
+        if self.from_circle:
+            return self.from_circle.get_position()
+        return None
+
+    def get_to_point(self):
+        if self.to_circle:
+            return self.to_circle.get_position()
+        return None
+
     def draw(self, batch=None):
+        if self.line_rectangle.color != self.color:
+            self.line_rectangle.set_color(self.color)
         self.line_rectangle.draw(batch)
         for triangle in self.line_triangles:
+            if triangle.color != self.color:
+                triangle.set_color(self.color)
             triangle.draw(batch)
         # self.inner_from_shape.draw(batch)
         # self.inner_to_shape.draw(batch)
@@ -80,7 +96,7 @@ class Edge:
                         old_triangle.delete()
                     self.line_triangles.clear()
                 delete_old_triangles()
-                triangle_color = config.world.edge_triangle_color
+                triangle_color = self.color
                 triangle_base_width = config.world.edge_triangles_width
                 triangle_height = 0.866 * triangle_base_width  # sqrt(3)/2
                 triangle_count = int(line_distance / triangle_height)
@@ -93,7 +109,7 @@ class Edge:
                                                                       color=triangle_color)
                     self.line_triangles.append(triangle)
             add_triangles()
-            inner_color = lib.colors.extra.green
+            inner_color = config.world.edge_in_node_color
             inner_line_width = 4
             if self.inner_from_shape:
                 self.inner_from_shape.delete()
@@ -103,6 +119,16 @@ class Edge:
                                                        radius=inner_line_width, color=inner_color)
             self.inner_to_shape = shapelib.Rectangle(to_node.get_position(), self.to_circle.get_position(),
                                                      radius=inner_line_width,  color=inner_color)
+
+    def set_color(self, color):
+        self.color = color
+
+    def set_as_path_edge(self, is_path_edge=True):
+        self.is_path_edge = is_path_edge
+        if is_path_edge:
+            self.set_color(config.world.path_edge_color)
+        else:
+            self.set_color(config.world.edge_triangle_color)
 
     def update_circles(self, from_circle_point, to_circle_point):
         if from_circle_point is not None:

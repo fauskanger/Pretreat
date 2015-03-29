@@ -21,7 +21,11 @@ class NavigationGraph():
 
     def on_path_update(self, path):
         # print("Path updated. {0}".format([node.label for node in path.get_node_list()]))
-        pass
+        path_edge_tuples = [] if not path else path.get_edge_list()
+        for edge_tuple in self.graph.edges():
+                edge = self.get_edge_object(edge_tuple)
+                is_path_edge = edge_tuple in path_edge_tuples
+                edge.set_as_path_edge(is_path_edge=is_path_edge)
 
     def get_selected_nodes(self):
         return [node for node in self.graph.nodes() if node.is_selected()]
@@ -96,7 +100,8 @@ class NavigationGraph():
         for neighbor_node in nx.all_neighbors(self.graph, node):
             def update_edge_weight(from_node, to_node):
                 cost = self.pathfinder.get_edge_cost(from_node, to_node)
-                self.graph[from_node][to_node][config.strings.wgt] = cost
+                if self.graph.has_edge(from_node, to_node):
+                    self.graph[from_node][to_node][config.strings.wgt] = cost
 
             def update_edge_shape(from_node, to_node):
                 edge = self.get_edge_object((from_node, to_node))

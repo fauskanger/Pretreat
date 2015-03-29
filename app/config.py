@@ -241,6 +241,8 @@ class Configurations():
             self.edge_in_node_color = colors.gray_66
             self.edge_triangle_color = colors.extra.white
             self.selected_node_color = colors.extra.orange_red
+            self.path_edge_color = colors.extra.crimson
+            self.path_node_color = self.path_edge_color
             self.start_node_color = colors.cyan
             self.destination_node_color = colors.magenta
             self.node_order_index = 1
