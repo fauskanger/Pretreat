@@ -25,4 +25,4 @@ In general, http://www.lfd.uci.edu/~gohlke/pythonlibs/ is currently a great sour
 
 License
 ----
-GPL v2.0 [ [Full license text](https://www.gnu.org/licenses/gpl-2.0.html) ]
+GPL v2.0 [ [Full license text](LICENSE.txt) ]
