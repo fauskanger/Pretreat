@@ -229,7 +229,48 @@ class Triangle(Shape):
         self.update_shape()
 
 
+class OutlinedCircle(Circle):
+    def __init__(self, position, radius, color, border=1, outline_color=lib.colors.black):
+        Circle.__init__(self, position, radius, color)
+        self.border = border
+        self.outlined_shape = Circle(position, radius+border, outline_color)
+        self.is_drawing_outline = True
+        self.has_rotated = False
 
+    def set_anchor(self, anchor_point):
+        super(OutlinedCircle, self).set_anchor(anchor_point)
+        self.outlined_shape.set_anchor(anchor_point)
+
+    def set_position(self, new_position):
+        super(OutlinedCircle, self).set_position(new_position)
+        self.outlined_shape.set_position(new_position)
+
+    def set_radius(self, radius):
+        super(OutlinedCircle, self).set_radius(radius)
+        self.outlined_shape.set_radius(radius + self.border)
+
+    def draw(self, batch=None):
+        if not self.has_rotated:
+            self.outlined_shape.rotate(4*math.pi / self.vertex_list.count)
+        if self.is_drawing_outline:
+            self.outlined_shape.draw(batch)
+        super(OutlinedCircle, self).draw(batch)
+
+    def toggle_outline(self):
+        self.set_outline_draw(not self.is_drawing_outline)
+
+    def set_outline_draw(self, draw_outline):
+        if draw_outline == self.is_drawing_outline:
+            return
+        self.is_drawing_outline = draw_outline
+        if self.is_drawing_outline:
+            super(OutlinedCircle, self).set_radius(self.outlined_shape.radius - self.border)
+        else:
+            super(OutlinedCircle, self).set_radius(self.outlined_shape.radius)
+
+    def delete(self):
+        super(OutlinedCircle, self).delete()
+        self.outlined_shape.delete()
 
 
 
