@@ -45,6 +45,7 @@ class StateMachine(pyglet.event.EventDispatcher, Observer):
         if state is None:
             return False
         self.states_stack.append(state)
+        self.dispatch_event('on_state_machine_push', state)
         return True
 
     def pop_state(self):
@@ -52,7 +53,7 @@ class StateMachine(pyglet.event.EventDispatcher, Observer):
         popped_state = None
         if states_count > 0:
             popped_state = self.states_stack.pop()
-        self.dispatch_event('on_state_machine_pop', popped_state)
+            self.dispatch_event('on_state_machine_pop', popped_state)
         return popped_state
 
     def update(self, delta):
@@ -65,3 +66,4 @@ class StateMachine(pyglet.event.EventDispatcher, Observer):
         print("{0} Notified of event: {0}".format(self.name, event))
 
 StateMachine.register_event_type('on_state_machine_pop')
+StateMachine.register_event_type('on_state_machine_push')
