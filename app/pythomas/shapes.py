@@ -252,6 +252,7 @@ class OutlinedCircle(Circle):
     def draw(self, batch=None):
         if not self.has_rotated:
             self.outlined_shape.rotate(4*math.pi / self.vertex_list.count)
+            self.has_rotated = True
         if self.is_drawing_outline:
             self.outlined_shape.draw(batch)
         super(OutlinedCircle, self).draw(batch)
