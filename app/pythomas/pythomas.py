@@ -31,6 +31,18 @@ def for_each_node_in(graph, lambda_method, is_reading_data=False):
         lambda_method(node)
 
 
+def bt709_y(rgb_color, rgb_range=255):
+    # used to normalize output in range [0, 1]
+    m = rgb_range
+    r, g, b = rgb_color
+    return 0.2126*r/m + 0.7152*g/m + 0.0722*b/m
+
+
+def rgba(rgb, alpha=255):
+    r, g, b = rgb
+    return r, b, g, alpha
+
+
 def interpolate_point(from_point, to_point, fraction):  # fraction is float in range [0, 1]
     x1, y1 = from_point
     x2, y2 = to_point

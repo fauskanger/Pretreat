@@ -35,14 +35,16 @@ class BaseEventHandler:
 
 
 class BaseWindow:
-    def __init__(self, window_name="Base Window", window_parameters=None):
+    def __init__(self, outer_handler, window_name="Base Window", window_parameters=None):
         if window_parameters is None:
             window_parameters = BaseWindow.get_default_window_parameters()
         # super(BaseWindow, self).__init__(**window_parameters)
         self.window = pyglet.window.Window(**window_parameters)
         self.window_name = window_name
+        self.outer_handler = outer_handler
         self.pressed_keys = key.KeyStateHandler()
         self.window.push_handlers(self.pressed_keys)
+        self.window.push_handlers(self.outer_handler)
 
     def update(self, dt):
         pass
@@ -60,10 +62,11 @@ class BaseWindow:
         aa = "No"
         try:
             gl_config = screen.get_best_config(template)
-            aa = "Yes ({0}x{0})".format(gl_config.samples)
         except pyglet.window.NoSuchConfigException:
             template = pyglet.gl.Config()
             gl_config = screen.get_best_config(template)
+        else:
+            aa = "Yes ({0}x{0})".format(gl_config.samples)
 
         # print('Display: {0}'.format(display))
         print('Screen: {0}'.format(screen))
@@ -93,8 +96,8 @@ class BaseWindow:
 
 
 class MainWindow(BaseWindow):
-    def __init__(self):
-        super(MainWindow, self).__init__("Main window")
+    def __init__(self, outer_handler):
+        super(MainWindow, self).__init__(outer_handler, "Main window")
         # self.push_handlers()
         self.nav_graph = NavigationGraph()
         # Create content
@@ -104,12 +107,13 @@ class MainWindow(BaseWindow):
                                             x=self.window.width // 2, y=self.window.height // 2,
                                             anchor_x='center', anchor_y='center',
                                             color=(255, 0, 0, 255))
-        self.background_image = pyglet.resource.image(lib.resource('bag/oasis2.png'))
+        self.altitude_image = pyglet.resource.image(lib.resource(config.strings.altitude_map))
+        self.background_image = self.altitude_image  # pyglet.resource.image(lib.resource('bag/oasis2.png'))
 
         self.agent = SuperAgent()
         self.window.set_visible(True)
         if not self.window.fullscreen:
-            self.window.set_size(self.background_image.width, self.background_image.height)
+            self.window.set_size(config.window.default_width, config.window.default_height)
         self.window.push_handlers(self)
         self.draw_background = True
         self.accumulated_scroll_y = 0.0
@@ -118,6 +122,23 @@ class MainWindow(BaseWindow):
         self.dragged_nodes = None
         self.dragged_node_start_positions = None
         self.drag_click_start = None
+
+        # Press S/D then click
+        self.set_path_end_on_click = False
+        self.next_node_click_state = None
+
+    def get_pixel(self, position, image=None):
+        image = self.altitude_image if not image else image
+        x, y = position
+        x = int(x)
+        y = int(y)
+
+        raw = image.get_region(x, y, 1, 1).get_image_data()
+
+        pformat = 'RGB'
+        pitch = raw.width * len(pformat)
+        pixels = raw.get_data(pformat, pitch)
+        print(tuple([color for color in pixels]))
 
     def update(self, dt):
         self.agent.update(dt)
@@ -137,14 +158,20 @@ class MainWindow(BaseWindow):
         if self.agent.state != self.agent.State.Idle:
             self.agent.draw()
 
-    def on_key_press(self, symbol, modifiers):
-        if symbol == key.B:
-            self.draw_background = not self.draw_background
-        if symbol == key.SPACE:
-            self.nav_graph.start_pathfinding()
-
-    def on_key_release(self, symbol, modifiers):
-        pass
+    def draw_graph_grid(self):
+        start_label = destination_label = None
+        if self.nav_graph.pathfinder:
+            if self.nav_graph.pathfinder.start_node:
+                start_label = self.nav_graph.pathfinder.start_node.label
+            if self.nav_graph.pathfinder.destination_node:
+                destination_label = self.nav_graph.pathfinder.destination_node.label
+        self.nav_graph.clear()
+        self.nav_graph.generate_grid_with_margin(8, 11, 0.1, self.window.width, self.window.height)
+        for node in self.nav_graph.graph.nodes():
+            if start_label and node.label == start_label:
+                self.nav_graph.set_start_node(node)
+            if destination_label and node.label == destination_label:
+                self.nav_graph.set_destination_node(node)
 
     def on_mouse_motion(self, x, y, dx, dy):
         # cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
@@ -213,14 +240,20 @@ class MainWindow(BaseWindow):
 
         if button == mouse.LEFT:
 
-            if Plib.is_ctrl_pressed(self.pressed_keys):
+            if self.set_path_end_on_click and self.next_node_click_state:
+                self.nav_graph.set_node_state(node, self.next_node_click_state)
+                self.next_node_click_state = None
+                self.set_path_end_on_click = False
+            elif Plib.is_ctrl_pressed(self.pressed_keys):
                 self.nav_graph.toggle_select(node)
             elif Plib.is_alt_pressed(self.pressed_keys):
                 self.nav_graph.remove_node(node)
             elif self.pressed_keys[key.S]:
                 self.nav_graph.set_start_node(node)
+                self.set_path_end_on_click = False  # Prevent next click from setting node to start
             elif self.pressed_keys[key.D]:
                 self.nav_graph.set_destination_node(node)
+                self.set_path_end_on_click = False  # Prevent next click from setting node to destination
             elif node:
                 self.nav_graph.deselect_all_nodes()
                 self.nav_graph.toggle_select(node)
@@ -264,6 +297,28 @@ class MainWindow(BaseWindow):
                     else:
                         self.nav_graph.remove_edges_to_many(node, selected_nodes)
                         self.nav_graph.remove_edges_from_many(node, selected_nodes)
+
+    def on_key_release(self, symbol, modifiers):
+        if symbol == key.S:
+            if self.set_path_end_on_click:
+                self.next_node_click_state = Node.State.Start
+        elif symbol == key.D:
+            if self.set_path_end_on_click:
+                self.next_node_click_state = Node.State.Destination
+        else:
+            self.set_path_end_on_click = False
+            self.next_node_click_state = None
+
+    def on_key_press(self, symbol, modifiers):
+        if symbol == key.B:
+            self.draw_background = not self.draw_background
+        if symbol == key.SPACE:
+            self.nav_graph.start_pathfinding()
+        if symbol == key.G:
+            self.draw_graph_grid()
+        if symbol == key.S or symbol == key.D:
+            self.set_path_end_on_click = True
+            self.next_node_click_state = None
 
     def on_resize(self, width, height):
         self.background_image.width = width
