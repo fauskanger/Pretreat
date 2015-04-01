@@ -8,7 +8,7 @@ A graph editor for examining pathfinding algorithms that take tactical retreat /
 
 ### Requirements
   - Math-library: Numpy [ [Official](http://www.numpy.org/) | [Wheels](http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy) ]
-  - Installation package: setuptools [ [Offical](https://pypi.python.org/pypi/setuptools) ] (required by NetworkX)
+  - Installation package: setuptools [ [Offical](https://pypi.python.org/pypi/setuptools) ] - required by NetworkX
   - Graph library: NetworkX 1.9.1 [ [How to install](http://networkx.github.io/documentation/networkx-1.9.1/install.html) ]
   - Windowing and multimedia library: Pyglet 1.2 [ [How to install](http://www.pyglet.org/download.html) ]
 
