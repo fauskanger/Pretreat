@@ -1,3 +1,5 @@
+import math
+
 class Colors():
     class ExtraColors():
         def __init__(self):
@@ -193,6 +195,8 @@ class Configurations():
             self.icon_folder = 'icons/map1'
             self.icons_paths = []  # Will be populated below
 
+            self.altitude_map = 'altitude_map.png'
+
             self.error_prefix = ' >>> '
 
             self.pos = 'pos'
@@ -208,8 +212,8 @@ class Configurations():
             self.fullscreen = False
             self.is_fraction_of_screen = False
             self.default_fraction_of_screen = 1 / 2
-            self.default_width = 560
-            self.default_height = 434
+            self.default_width = 1280
+            self.default_height = 720
             self.desired_fps = 60.0
             self.aa_samples = 2
 
@@ -235,11 +239,19 @@ class Configurations():
             self.base_edge_chance = 1
             self.number_of_edge_types = 5
 
+            def bt709_relative_luminance(rgb_color, rgb_max=255):
+                # used to normalize output in range [0, 1]
+                m = rgb_max
+                r, g, b = rgb_color
+                return 0.2126*r/m + 0.7152*g/m + 0.0722*b/m
+
             self.color_mode = 'c3B'  # 'c4B' to include alpha, but some parts explicitly expect 3-tuples
-            self.node_color = colors.gray_EE
+            self.node_color = (0xCC, 0x99, 0x66)
+            node_color_is_dark = bt709_relative_luminance(self. node_color) < 0.5
+            self.node_label_color = colors.white if node_color_is_dark else colors.black
             self.edge_color = self.node_color
             self.edge_in_node_color = colors.gray_66
-            self.edge_triangle_color = colors.extra.white
+            self.edge_triangle_color = self.node_color
             self.selected_node_color = colors.extra.orange_red
             self.path_edge_color = colors.extra.crimson
             self.path_node_color = self.path_edge_color
@@ -247,8 +259,8 @@ class Configurations():
             self.destination_node_color = colors.magenta
             self.node_order_index = 1
 
-            self.node_radius = 25
-            self.selected_radius_increase = max(0.3 * self.node_radius, 10)  # For the outer circle radius
+            self.node_radius = 20
+            self.selected_radius_increase = max(0.3 * self.node_radius, 5)  # For the outer circle radius
             self.selected_radius_decrease = 0.61 * self.selected_radius_increase  # How much the node circle will shrink
             self.node_padding = 1/3 * self.node_radius
 

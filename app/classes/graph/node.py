@@ -33,7 +33,7 @@ class Node:
                                             font_size=0.61*self.current_radius,
                                             x=self.x, y=self.y,
                                             anchor_x='center', anchor_y='center',
-                                            color=(0, 0, 0, 255))
+                                            color=lib.rgba(config.world.node_label_color))
         self.altitude = altitude
         self.content = content
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)

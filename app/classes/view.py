@@ -4,7 +4,7 @@ from app.classes.windows.main_window import MainWindow
 
 class View():
     def __init__(self):
-        self.window = MainWindow()
+        self.window = MainWindow(self)
 
     def run(self):
         print("Starting app: {0}".format(self.window.window_name))

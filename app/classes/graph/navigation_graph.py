@@ -1,8 +1,10 @@
 import math
+from heapq import heappush, heappop
 
 import networkx as nx
 
-from app.config import config
+
+from app.config import config, seeded_random as random
 from app.pythomas import pythomas as lib
 from app.classes.graph.node import Node
 from app.classes.graph.edge import Edge
@@ -172,6 +174,11 @@ class NavigationGraph():
         self.update_node_labels()
         return True
 
+    def add_nodes_from(self, list_of_nodes):
+        self.graph.add_nodes_from(list_of_nodes)
+        self.node_set_dirty = True
+        self.update_node_labels()
+
     def move_node(self, node, position):
         if node is None or not self.is_valid_node_position(position, node_exceptions=[node]):
             return False
@@ -187,34 +194,37 @@ class NavigationGraph():
         self.remove_all_node_edges(node)
         try:
             self.graph.remove_node(node)
+        except nx.NetworkXError:
+            return False
+        else:
             self.node_set_dirty = True
             if self.pathfinder:
                 self.pathfinder.clear_node(node)
             self.update_node_labels()
             return True
-        except nx.NetworkXError:
-            return False
 
     def add_edge(self, from_node, to_node):
         if from_node is None or to_node is None or from_node == to_node:
             return False
+        weight = self.pathfinder.get_edge_cost(from_node, to_node)
         try:
-            weight = self.pathfinder.get_edge_cost(from_node, to_node)
             self.graph.add_edge(from_node, to_node, weight=weight, object=Edge(from_node, to_node))
-            self.node_set_dirty = True
-            return True
         except nx.NetworkXError:
             return False
+        else:
+            self.node_set_dirty = True
+            return True
 
     def remove_edge(self, from_node, to_node):
         if from_node is None or to_node is None:
             return False
         try:
             self.graph.remove_edge(from_node, to_node)
-            self.node_set_dirty = True
-            return True
         except nx.NetworkXError:
             return False
+        else:
+            self.node_set_dirty = True
+            return True
 
     def remove_edges_from_many(self, to_node, from_nodes):
         for from_node in from_nodes:
@@ -230,6 +240,9 @@ class NavigationGraph():
                 self.graph.remove_edge(u, v)
 
     def get_edge_object(self, edge):
+        # Works with both (u, v)-tuples and edges from nx.G.edges()
+        if edge is None:
+            return None
         try:
             return self.graph[edge[0]][edge[1]]['object']
         except KeyError:
@@ -246,7 +259,7 @@ class NavigationGraph():
             else:
                 unlabeled_nodes.append(node)
 
-        unused_labels = [str(label) for label in all_labels if str(label) not in used_labels]
+        unused_labels = [label for label in all_labels if label not in used_labels]
 
         for i in range(len(unlabeled_nodes)):
             node = unlabeled_nodes[i]
@@ -262,6 +275,14 @@ class NavigationGraph():
             if self.pathfinder:
                 self.pathfinder.draw()
         draw_path()
+
+        def draw_edges():
+            for edge in self.graph.edges(data=True):
+                if edge in path_edges:
+                    pass
+                else:
+                    self.get_edge_object(edge).draw(batch)
+        draw_edges()
 
         def draw_selected_nodes():
             def draw_node_as_selected(node):
@@ -283,14 +304,6 @@ class NavigationGraph():
                 else:
                     node_instance.draw()
         draw_nodes()
-
-        def draw_edges():
-            for edge in self.graph.edges(data=True):
-                if edge in path_edges:
-                    pass
-                else:
-                    self.get_edge_object(edge).draw(batch)
-        draw_edges()
 
         def draw_node_labels():
             for node in self.graph.nodes():
@@ -315,4 +328,71 @@ class NavigationGraph():
     def update_path(self):
         if self.pathfinder:
             self.pathfinder.update_to_new_path()
-            
+
+    def find_nearest_nodes(self, node, number_of_hits=1, candidates=None, exceptions=()):
+        candidates = self.graph.nodes() if not candidates else candidates
+        candidates = [candidate for candidate in candidates if candidate != node and candidate not in exceptions]
+
+        def key_function(candidate):
+            return NavigationGraph.get_node_distance(candidate, node)
+
+        sorted_list = sorted(candidates, key=key_function)
+        return sorted_list[:number_of_hits]
+
+    def clear(self):
+        nodes = self.graph.nodes()
+        for node in nodes:
+            self.remove_node(node)
+        print("All nodes and edges removed.")
+
+    def generate_grid_with_margin(self, rows, cols, margin, width, height):
+        if margin > 1:
+            margin = 1
+        if margin < 0:
+            margin = 0
+        w, h = width, height
+        self.generate_grid(rows, cols, (1-margin)*w, (1-margin)*h, (margin*w, margin*h))
+
+    def generate_grid(self, row_count, col_count, max_width, max_height, start_pos=(0, 0), make_hex=True):
+        nodes = []
+        start_x, start_y = start_pos
+        width = max_width-start_x
+        height = max_height-start_y
+        row_step = height/(row_count-1)
+        col_step = width/(col_count-1)
+        hex_offset = row_step/2 if make_hex else 0
+        for row_i in range(row_count):
+            odd = True
+            for col_i in range(col_count):
+                x = col_i * col_step
+                y = row_i * row_step
+                x, y = lib.sum_points((x, y), start_pos)
+                if odd:
+                    y += hex_offset
+                if not odd or row_i < row_count - 1:
+                    node = Node(x, y)
+                    nodes.append(node)
+                    self.add_node(node)
+                odd = not odd
+
+        w2 = col_step * col_step
+        h2 = row_step * row_step
+        if w2 < h2:
+            w2 /= 4
+        else:
+            h2 /= 4
+        max_near_distance = math.sqrt(w2 + h2) + 5
+
+        random.shuffle(nodes)
+
+        for node in nodes:
+            def is_near(candidate):
+                return NavigationGraph.get_node_distance(candidate, node) < max_near_distance
+            neighbors = [candidate for candidate in nodes if is_near(candidate)]
+            for neighbor in neighbors:
+                if self.graph.degree(neighbor) < 8:
+                    val = random.random()*100
+                    if val > 50:
+                        self.add_edge(neighbor, node)
+                    elif val > 10:
+                        self.add_edge(node, neighbor)

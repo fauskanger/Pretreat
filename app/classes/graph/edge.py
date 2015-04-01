@@ -135,12 +135,12 @@ class Edge:
             if self.from_circle:
                 self.from_circle.set_position(from_circle_point)
             else:
-                self.from_circle = shapelib.Circle(from_circle_point, config.world.edge_end_radius, lib.colors.blue)
+                self.from_circle = shapelib.Circle(from_circle_point, config.world.edge_end_radius, lib.colors.black)
         if to_circle_point is not None:
             if self.to_circle:
                 self.to_circle.set_position(to_circle_point)
             else:
-                self.to_circle = shapelib.Circle(to_circle_point, config.world.edge_end_radius, lib.colors.red)
+                self.to_circle = shapelib.Circle(to_circle_point, config.world.edge_end_radius, lib.colors.black)
 
     def delete(self):
         if self.line_rectangle:
