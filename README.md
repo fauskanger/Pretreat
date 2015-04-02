@@ -19,7 +19,7 @@ A graph editor for examining pathfinding algorithms that take tactical retreat /
     - Numpy
     - setuptools
   - Tested on Windows 7 and 8
-  - IDE used: JetBrain's PyCharm (Free Academic Licence) [ [Download here](https://www.jetbrains.com/pycharm/download/) ]
+  - IDE used: JetBrain's PyCharm (Free Academic License) [ [Download here](https://www.jetbrains.com/pycharm/download/) ]
 
 In general, http://www.lfd.uci.edu/~gohlke/pythonlibs/ is currently a great source of Python libraries. 
 
