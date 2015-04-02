@@ -18,9 +18,9 @@ class NavigationGraph():
         # self.selected_nodes = []
         self.pathfinder = AStarPathfinder(self.graph)
         self.pathfinder.push_handlers(self)
-        self.node_positions_dirty = False
-        self.node_set_dirty = False
-        self.select_dirty = False
+        self.node_positions_dirty = False   # Node positions
+        self.node_set_dirty = False         # Adding/Removing nodes
+        self.node_selected_dirty = False    # Selected/deselected nodes
 
     def on_path_update(self, path):
         # print("Path updated. {0}".format([node.label for node in path.get_node_list()]))
@@ -135,7 +135,7 @@ class NavigationGraph():
         # added = lib.try_append(self.selected_nodes, node)
         added = not node.is_selected()
         node.set_as_selected(selected=True)
-        self.select_dirty = True
+        self.node_selected_dirty = True
         self.update_node_edges(node)
         return added
 
@@ -145,7 +145,7 @@ class NavigationGraph():
         # removed = lib.try_remove(self.selected_nodes, node)
         removed = node.is_selected()
         node.set_as_selected(selected=False)
-        self.select_dirty = True
+        self.node_selected_dirty = True
         self.update_node_edges(node)
         return removed
 
@@ -311,7 +311,7 @@ class NavigationGraph():
         draw_node_labels()
 
     def update(self, dt):
-        any_dirty = self.node_positions_dirty or self.node_set_dirty or self.select_dirty
+        any_dirty = self.node_positions_dirty or self.node_set_dirty or self.node_selected_dirty
 
         if self.pathfinder and any_dirty:
             self.pathfinder.update_to_new_path()
@@ -320,7 +320,7 @@ class NavigationGraph():
 
         self.node_positions_dirty = False
         self.node_set_dirty = False
-        self.select_dirty = False
+        self.node_selected_dirty = False
 
     def start_pathfinding(self):
         self.update_path()

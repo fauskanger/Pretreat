@@ -20,7 +20,6 @@ class PretreatPathfinder(CustomPathfinder):
 
     def tick(self):
         print("Tick the pathfinder")
-        pass
 
     def complete_search(self):
         pass
