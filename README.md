@@ -26,33 +26,43 @@ This application is meant to provide the basic tools to illustrate and test such
 In general, http://www.lfd.uci.edu/~gohlke/pythonlibs/ is currently a great source of Python libraries. 
 
 ## How to use
-LMB, RMB and MMB is short for Left/Right/Middle Mouse Button
+
+  1. Create a directed graph by adding nodes and edges.
+  2. Set start and destination node.
+  3. Pathfinder starts when both ends are defined.
+  
+
+LMB, RMB and MMB is short for Left/Right/Middle Mouse Button:
 
 ### Nodes
 | Event         | Input         | Alternative |
 | :------------- |:-------------|:----|
-| Add Node      | RMB | Ctrl + RMB|
+| Add Node      | Ctrl + RMB | RMB|
 | Remove Node      | Alt + RMB      |
-| | |
 | Select a Node | LMB |
 | Add Node to selection | Ctrl + LMB|
 | Remove Node from selection | Alt + LMB|
-| | |
 | Move Selected Nodes | MMB + Drag      |
-| | |
-| Set Start | S + LMB| S, then LMB |
-| Set Destination | D + LMB| D, then LMB |
 
 ### Edges
 When one or more nodes are selected:
 
 | Event         | Input         |
 | :------------- |:-------------|
-| Add From Selected To <clicked>       | Ctrl + RMB |
-| Add To Selected From <clicked>       | Ctrl + Shift + RMB |
-| Remove From Selected To <clicked>       | Alt + RMB |
-| Remove To Selected From <clicked>       | Alt + Shift + RMB |
+| Add From Selected To       | Ctrl + RMB |
+| Add To Selected From      | Ctrl + Shift + RMB |
+| Remove From Selected To        | Alt + RMB |
+| Remove To Selected From       | Alt + Shift + RMB |
 | Add/Remove both To and From      | RMB |
+
+### Pathfinding
+| Event         | Input         | Alternative |
+| :------------- |:-------------|:----|
+| Set Start | S + LMB| S, then LMB |
+| Set Destination | D + LMB| D, then LMB |
+| Complete Search\*      | Space |
+
+\*) Applicable when illustrating pathfinding algorithm step by step.
 
 ### Miscellaneous
 | Event         | Input         |
@@ -62,4 +72,6 @@ When one or more nodes are selected:
 
 
 ## License
-GPL v2.0 [ [Full license text](https://www.gnu.org/licenses/gpl-2.0.html) ]
+GPL v2.0 - GNU General Public License Version 2
+
+Full license text: [ [Pretty (.md)](LICENSE.md) | [Plain](LICENSE) ]
