@@ -1,5 +1,6 @@
 import math
 
+
 class Colors():
     class ExtraColors():
         def __init__(self):
@@ -191,6 +192,7 @@ class Configurations():
         def __init__(self):
             self.title = 'My Test Application'
             self.resource_path = 'app/resources'
+            self.sqlite3_filename = 'db/sqlite3_pretreat.db'
             self.plot_save_filename = "weighted_graph.png"
             self.icon_folder = 'icons/map1'
             self.icons_paths = []  # Will be populated below

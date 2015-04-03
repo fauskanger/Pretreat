@@ -1,7 +1,12 @@
 import numpy as np
+import sqlite3
 import math
 
 from app.config import config, Colors
+
+
+def db_connection():
+    return sqlite3.connect(resource(config.strings.sqlite3_filename))
 
 
 def try_remove(the_list, element):
