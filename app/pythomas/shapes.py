@@ -230,7 +230,7 @@ class Triangle(Shape):
 
 
 class OutlinedCircle(Circle):
-    def __init__(self, position, radius, color, border=1, outline_color=lib.colors.black):
+    def __init__(self, position, radius, color, border=1.5, outline_color=lib.colors.black):
         Circle.__init__(self, position, radius, color)
         self.border = border
         self.outlined_shape = Circle(position, radius+border, outline_color)
@@ -250,9 +250,9 @@ class OutlinedCircle(Circle):
         self.outlined_shape.set_radius(radius + self.border)
 
     def draw(self, batch=None):
-        if not self.has_rotated:
-            self.outlined_shape.rotate(4*math.pi / self.vertex_list.count)
-            self.has_rotated = True
+        # if not self.has_rotated:
+        #     self.outlined_shape.rotate(4*math.pi / self.vertex_list.count)
+        #     self.has_rotated = True
         if self.is_drawing_outline:
             self.outlined_shape.draw(batch)
         super(OutlinedCircle, self).draw(batch)

@@ -3,9 +3,9 @@ from pyglet.window import key, mouse
 
 from app.config import config
 from app.pythomas import pythomas as lib
+from app.pythomas.pythomas import PygletLib as Plib
 from app.classes.graph.agent import SuperAgent
 from app.classes.graph.navigation_graph import NavigationGraph, Node
-from app.pythomas.pythomas import PygletLib as Plib
 
 
 class BaseEventHandler:
@@ -35,6 +35,7 @@ class BaseEventHandler:
 
 
 class BaseWindow:
+
     def __init__(self, outer_handler, window_name="Base Window", window_parameters=None):
         if window_parameters is None:
             window_parameters = BaseWindow.get_default_window_parameters()
@@ -100,15 +101,9 @@ class MainWindow(BaseWindow):
         super(MainWindow, self).__init__(outer_handler, "Main window")
         # self.push_handlers()
         self.nav_graph = NavigationGraph()
-        # Create content
-        self.text_label = pyglet.text.Label('Hello, world. Press F!',
-                                            font_name='Times New Roman',
-                                            font_size=self.window.height/10,
-                                            x=self.window.width // 2, y=self.window.height // 2,
-                                            anchor_x='center', anchor_y='center',
-                                            color=(255, 0, 0, 255))
         self.altitude_image = pyglet.resource.image(lib.resource(config.strings.altitude_map))
-        self.background_image = self.altitude_image  # pyglet.resource.image(lib.resource('bag/oasis2.png'))
+
+        self.background_image = self.altitude_image
 
         self.agent = SuperAgent()
         self.window.set_visible(True)
@@ -123,22 +118,9 @@ class MainWindow(BaseWindow):
         self.dragged_node_start_positions = None
         self.drag_click_start = None
 
-        # Press S/D then click
+        # Press S/D then click to set Start/Destination node
         self.set_path_end_on_click = False
         self.next_node_click_state = None
-
-    def get_pixel(self, position, image=None):
-        image = self.altitude_image if not image else image
-        x, y = position
-        x = int(x)
-        y = int(y)
-
-        raw = image.get_region(x, y, 1, 1).get_image_data()
-
-        pformat = 'RGB'
-        pitch = raw.width * len(pformat)
-        pixels = raw.get_data(pformat, pitch)
-        print(tuple([color for color in pixels]))
 
     def update(self, dt):
         self.agent.update(dt)
@@ -154,7 +136,6 @@ class MainWindow(BaseWindow):
             self.nav_graph.draw(nav_batch)
             nav_batch.draw()
         draw_graph()
-        # self.text_label.draw()
         if self.agent.state != self.agent.State.Idle:
             self.agent.draw()
 
@@ -222,6 +203,7 @@ class MainWindow(BaseWindow):
             reset_node_dragging()
 
     def on_mouse_press(self, x, y, button, modifiers):
+        position = x, y
         node = self.nav_graph.get_node_from_position((x, y))
         selected_nodes = self.nav_graph.get_selected_nodes()
 
@@ -264,7 +246,7 @@ class MainWindow(BaseWindow):
 
             if Plib.is_ctrl_pressed(self.pressed_keys):
                 if not selected_nodes:
-                    self.nav_graph.add_node(Node(x, y))
+                    self.nav_graph.add_node(self.nav_graph.create_node(position))
                 else:
                     if not Plib.is_shift_pressed(self.pressed_keys):
                         self.nav_graph.create_edge_from_selected_to(node)
@@ -282,7 +264,7 @@ class MainWindow(BaseWindow):
             else:
 
                 if node is None:
-                    self.nav_graph.add_node(Node(x, y))
+                    self.nav_graph.add_node(self.nav_graph.create_node(position))
                 else:
                     def all_selected_has_edge():
                         for selected_node in selected_nodes:

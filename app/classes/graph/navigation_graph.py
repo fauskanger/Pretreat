@@ -1,8 +1,8 @@
 import math
+import pyglet
+
 from heapq import heappush, heappop
-
 import networkx as nx
-
 
 from app.config import config, seeded_random as random
 from app.pythomas import pythomas as lib
@@ -16,11 +16,23 @@ class NavigationGraph():
     def __init__(self):
         self.graph = nx.DiGraph()
         # self.selected_nodes = []
+        self.altitude_image = pyglet.resource.image(lib.resource(config.strings.altitude_map))
         self.pathfinder = AStarPathfinder(self.graph)
         self.pathfinder.push_handlers(self)
         self.node_positions_dirty = False   # Node positions
         self.node_set_dirty = False         # Adding/Removing nodes
         self.node_selected_dirty = False    # Selected/deselected nodes
+
+    def get_altitude(self, position):
+        min_altitude = config.world.min_altitude
+        max_altitude = config.world.max_altitude
+        pixel_value = lib.get_pixel(self.altitude_image, position)[0]/255
+        altitude = (max_altitude - min_altitude) * pixel_value + min_altitude
+        return altitude
+
+    def create_node(self, position):
+        x, y = position
+        return Node(x, y, altitude=self.get_altitude(position))
 
     def on_path_update(self, path):
         # print("Path updated. {0}".format([node.label for node in path.get_node_list()]))
@@ -370,7 +382,7 @@ class NavigationGraph():
                 if odd:
                     y += hex_offset
                 if not odd or row_i < row_count - 1:
-                    node = Node(x, y)
+                    node = self.create_node((x, y))
                     nodes.append(node)
                     self.add_node(node)
                 odd = not odd

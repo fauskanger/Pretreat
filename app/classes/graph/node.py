@@ -24,8 +24,8 @@ class Node:
         self.current_radius = config.world.node_radius
         self.default_color = config.world.node_color
         self.current_color = self.default_color
-        self.x = int(x)
-        self.y = int(y)
+        self.x = x
+        self.y = y
         self.label = None
         text_label = "" if not self.label else self.label
         self.text_label = pyglet.text.Label(text_label,
@@ -37,7 +37,7 @@ class Node:
         self.altitude = altitude
         self.content = content
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
-        self.circle = shapelib.Circle((x, y), self.current_radius, self.current_color)
+        self.circle = shapelib.OutlinedCircle((x, y), self.current_radius, self.current_color)
         self.path_circle = None
         self.select_circle = None
         self.state = self.State.Default
@@ -62,7 +62,7 @@ class Node:
                 radius = self.get_visual_radius()+5
                 color = config.world.path_edge_color
                 if not self.path_circle:
-                    self.path_circle = shapelib.Circle(pos, radius, color)
+                    self.path_circle = shapelib.OutlinedCircle(pos, radius, color)
                 self.path_circle.set_position(pos)
                 self.path_circle.set_radius(radius)
 
@@ -73,7 +73,7 @@ class Node:
         selected_radius = self.get_radius() + config.world.selected_radius_increase
         color = config.world.selected_node_color
         if self.select_circle is None:
-            self.select_circle = shapelib.Circle(position=self.get_position(), radius=selected_radius, color=color)
+            self.select_circle = shapelib.OutlinedCircle(position=self.get_position(), radius=selected_radius, color=color)
         self.select_circle.set_radius(selected_radius)
         self.select_circle.set_color(color)
 

@@ -52,12 +52,12 @@ def interpolate_point(from_point, to_point, fraction):  # fraction is float in r
     return x, y
 
 
-def get_circle_points(center=(0.0, 0.0), radius=1.0, number_of_points=32, include_center=False, repeat=True):
+def get_circle_points(center=(0.0, 0.0), radius=10.0, number_of_points=32, include_center=False, repeat=True):
     points_list = []
     for i in range(number_of_points):
         a = 2.0*math.pi*float(i)/number_of_points
-        points_list.append(center[0]+radius*math.sin(a))
-        points_list.append(center[1]+radius*math.cos(a))
+        points_list.append(center[0]+radius*math.cos(a))
+        points_list.append(center[1]+radius*math.sin(a))
     if include_center and repeat:
         points_list.append(points_list[0])
         points_list.append(points_list[1])
@@ -203,6 +203,23 @@ def get_point_in_direction(distance, start_position, point_in_direction, stop_at
     if stop_at_target and abs(p[0]-q[0]) < abs(p[0]-new_point[0]):
         new_point = point_in_direction
     return new_point
+
+
+def get_pixel(image, position):
+    x, y = position
+    x = int(x)
+    y = int(y)
+
+    pformat = 'RGBA'
+    format_length = len(pformat)
+    image_data = image.get_image_data()
+    width = image_data.width
+    pitch = image_data.width * format_length
+    data = image_data.get_data(pformat, pitch)
+    pos = (width*y + x) * format_length
+    pixels = data[pos: pos + format_length]
+
+    return tuple(color for color in pixels)
 
 
 def get_list_of_points_from_list_of_coordinates(list_of_coords, point_count):
