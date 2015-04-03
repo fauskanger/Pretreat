@@ -15,7 +15,7 @@ This application is meant to provide the basic tools to illustrate and test such
   - Graph library: NetworkX 1.9.1 [ [How to install](http://networkx.github.io/documentation/networkx-1.9.1/install.html) ]
   - Windowing and multimedia library: Pyglet 1.2 [ [How to install](http://www.pyglet.org/download.html) ]
 
-### Development
+### Current/working Setup
   - Developed with 64-bit version of Python 3.4.2 (Kit: [Anaconda Python Package](https://store.continuum.io/cshop/anaconda/))
   - Anaconda includes the following used/required packages: (See "Requirements")
     - NumPy
@@ -23,12 +23,11 @@ This application is meant to provide the basic tools to illustrate and test such
   - Tested on Windows 7 and 8
   - IDE used: JetBrain's PyCharm (Free Academic Licence) [ [Download here](https://www.jetbrains.com/pycharm/download/) ]
 
-In general, http://www.lfd.uci.edu/~gohlke/pythonlibs/ is currently a great source of Python libraries. 
+(Generally, http://www.lfd.uci.edu/~gohlke/pythonlibs/ has been a great source of Python libraries for other projects too.) 
 
 ## How to use
-
   1. Create a directed graph by adding nodes and edges.
-  2. Set start and destination node.
+  2. Set start and destination nodes.
   3. Pathfinder starts when both ends are defined.
   
 
@@ -62,7 +61,7 @@ When one or more nodes are selected:
 | Set Destination | D + LMB| D, then LMB |
 | Complete Search\*      | Space |
 
-\*) Applicable when illustrating pathfinding algorithm step by step.
+\*) Applicable when pathfinding algorithm is illustrated step by step.
 
 ### Miscellaneous
 | Event         | Input         |
