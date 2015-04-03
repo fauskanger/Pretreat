@@ -33,13 +33,13 @@ LMB, RMB and MMB is short for Left/Right/Middle Mouse Button
 | :------------- |:-------------|:----|
 | Add Node      | RMB | Ctrl + RMB|
 | Remove Node      | Alt + RMB      |
-
+| | |
 | Select a Node | LMB |
 | Add Node to selection | Ctrl + LMB|
 | Remove Node from selection | Alt + LMB|
-
+| | |
 | Move Selected Nodes | MMB + Drag      |
-
+| | |
 | Set Start | S + LMB| S, then LMB |
 | Set Destination | D + LMB| D, then LMB |
 
