@@ -2,8 +2,9 @@ import numpy as np
 import sqlite3
 import math
 
-from app.config import config, Colors
+from app.config import config
 
+# Note: colors is copied from config
 
 def resource(filename):
     path = '{0}/{1}'.format(config.strings.resource_path, filename)
@@ -324,7 +325,7 @@ def multiply_points(p, q):
 def divide_points(p, q):
     return p[0]/q[0], p[1]/q[1]
 
-colors = Colors()
+colors = config.colors
 
 
 import pyglet
