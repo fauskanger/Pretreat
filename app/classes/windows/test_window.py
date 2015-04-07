@@ -12,6 +12,7 @@ class TestWindow(BaseWindow):
         self.shapes = []
         self.batch = pyglet.graphics.Batch()
         self.add_test_objects()
+        self.extra_shapes = []
         # self.set_batch()
 
     def add_test_objects(self):
@@ -39,7 +40,7 @@ class TestWindow(BaseWindow):
     def on_mouse_release(self, x, y, button, modifiers):
         if button == mouse.LEFT:
             color = random.choice([lib.colors.red, lib.colors.blue, lib.colors.yellow, lib.colors.lime])
-            shape = shapelib.Triangle((x, y), 20, color=color)
+            shape = shapelib.Circle((x, y), 20, color=color)
             self.shapes.append(shape)
             # batch_data = shape.get_batch_parameters()
             # count = batch_data[0]
@@ -51,16 +52,29 @@ class TestWindow(BaseWindow):
     def on_mouse_press(self, x, y, button, modifiers):
         if button == mouse.RIGHT:
             color = random.choice([lib.colors.red, lib.colors.blue, lib.colors.yellow, lib.colors.lime])
-            flatten = lib.flatten_list_of_tuples
             offset = random.random()*800 - 400
             p1 = 500 + offset, 400 - offset/3
-            p2 = 600 + offset, 400 - offset/3
-            p3 = 600 + offset, 500 - offset/3
-            p4 = 500 + offset, 500 - offset/3
-            points = [p1, p2, p3, p4]
-            number_of_vertices = len(points)
-            coords = flatten(points)
-            colors = flatten([color * number_of_vertices])
-            data = (config.world.vertex_mode, coords), \
-                   (config.world.color_mode, colors)
-            self.batch.add(number_of_vertices, pyglet.gl.GL_POLYGON, None, *data)
+            # p2 = 600 + offset, 400 - offset/3
+            # p3 = 600 + offset, 500 - offset/3
+            # p4 = 500 + offset, 500 - offset/3
+            # points = [p1, p2, p3, p4]
+
+            number_of_vertices = 5  # len(points)
+            # flatten = lib.flatten_list_of_tuples
+            # coords = lib.get_circle_points(p1, number_of_points=number_of_vertices)  # flatten(points)
+            # colors = flatten([color * number_of_vertices])
+            # data = (config.world.vertex_mode, coords), \
+            #        (config.world.color_mode, colors)
+            # self.batch.add(number_of_vertices, pyglet.gl.GL_TRIANGLE_FAN, pyglet.graphics.Group(), *data)
+            shape = shapelib.Circle(p1, 20, color, z=int(random.random()*100000))
+            shape.set_batch(self.batch)
+            # self.shapes.append(shape)
+            self.extra_shapes.append(shape)
+            # batch_data = shape.get_batch_parameters()
+            # count = batch_data[0]
+            # mode = batch_data[1]
+            # group = batch_data[2]
+            # # data = batch_data[3]
+            # data = (config.world.vertex_mode, shape.vertex_list.vertices), \
+            #        (config.world.color_mode, shape.vertex_list.colors)
+            # self.batch.add(count, mode, group, *data)

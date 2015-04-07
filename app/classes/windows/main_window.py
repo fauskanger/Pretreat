@@ -22,7 +22,6 @@ class MainWindow(BaseWindow):
         self.window.set_visible(True)
         if not self.window.fullscreen:
             self.window.set_size(config.window.default_width, config.window.default_height)
-        self.window.push_handlers(self)
         self.draw_background = True
         self.accumulated_scroll_y = 0.0
 
@@ -45,9 +44,7 @@ class MainWindow(BaseWindow):
             self.background_image.blit(0, 0)
 
         def draw_graph():
-            nav_batch = pyglet.graphics.Batch()
-            self.nav_graph.draw(nav_batch)
-            nav_batch.draw()
+            self.nav_graph.draw()
         draw_graph()
         if self.agent.state != self.agent.State.Idle:
             self.agent.draw()

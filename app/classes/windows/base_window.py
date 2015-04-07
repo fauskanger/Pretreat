@@ -5,32 +5,33 @@ from app.config import config
 
 
 class BaseEventHandler:
-    def __init__(self, window):
-        self.window = window
-
-    def on_key_press(self, symbol, modifiers):
-        pass
 
     def on_key_release(self, symbol, modifiers):
+        pass
+
+    def on_key_press(self, symbol, modifiers):
         pass
 
     def on_mouse_motion(self, x, y, dx, dy):
         pass
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        pass
-
-    def on_mouse_release(self, x, y, button, modifiers):
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         pass
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         pass
 
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+    def on_mouse_release(self, x, y, button, modifiers):
+        pass
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        pass
+
+    def on_resize(self, width, height):
         pass
 
 
-class BaseWindow:
+class BaseWindow(BaseEventHandler):
 
     def __init__(self, window_name, outer_handler=None, window_parameters=None):
         if window_parameters is None:
@@ -93,30 +94,6 @@ class BaseWindow:
                     )
 
     def update(self, dt):
-        pass
-
-    def on_key_release(self, symbol, modifiers):
-        pass
-
-    def on_key_press(self, symbol, modifiers):
-        pass
-
-    def on_mouse_motion(self, x, y, dx, dy):
-        pass
-
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        pass
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        pass
-
-    def on_mouse_release(self, x, y, button, modifiers):
-        pass
-
-    def on_mouse_press(self, x, y, button, modifiers):
-        pass
-
-    def on_resize(self, width, height):
         pass
 
     def on_draw(self):

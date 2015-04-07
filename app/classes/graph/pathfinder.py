@@ -1,5 +1,5 @@
 from enum import Enum
-
+import math
 import networkx as nx
 import pyglet
 
@@ -13,12 +13,13 @@ class Pathfinder(pyglet.event.EventDispatcher):
     def get_event_type_on_path_update():
         return strings.events.on_path_update
 
-    def __init__(self, graph):
+    def __init__(self, graph, altitude_function=None):
         self.graph = graph
         self.start_node = None
         self.destination_node = None
         self.path = None
         self.register_event_type(Pathfinder.get_event_type_on_path_update())
+        self.altitude_function = altitude_function
 
     def get_path(self):
         if self.path is None:
@@ -26,7 +27,20 @@ class Pathfinder(pyglet.event.EventDispatcher):
         return self.path
 
     def get_edge_cost(self, from_node, to_node):
-        return lib.get_point_distance(from_node.get_position(), to_node.get_position())
+        max_slope = 2   # 60 degrees
+        min_slope = -2  # -60 degrees
+        slope_width = abs(max_slope - min_slope)
+        altitude_wgt_coefficient = 1
+        distance_coefficient = 1
+        distance = lib.get_point_distance(from_node.get_position(), to_node.get_position())
+        alt_raise = 0 if not self.altitude_function else self.altitude_function(from_node, to_node)
+        slope = alt_raise/distance
+        alt_contribution = 0
+        if min_slope < slope < max_slope:
+            alt_contribution = slope - min_slope
+        dist_cost = distance
+        alt_cost = alt_contribution / slope_width * distance
+        return dist_cost * distance_coefficient + altitude_wgt_coefficient * alt_cost
 
     def set_start_node(self, node):
         if self.destination_node == node:
@@ -94,8 +108,8 @@ class Pathfinder(pyglet.event.EventDispatcher):
 
 
 class AStarPathfinder(Pathfinder):
-    def __init__(self, graph):
-        Pathfinder.__init__(self, graph)
+    def __init__(self, graph, altitude_function=None):
+        Pathfinder.__init__(self, graph, altitude_function)
 
         def heuristics(from_node, to_node):
             return from_node.get_distance_to(to_node)
@@ -121,8 +135,8 @@ class CustomPathfinder(Pathfinder):
         Paused = 2
         Stopped = 3
 
-    def __init__(self, graph, name):
-        Pathfinder.__init__(self, graph)
+    def __init__(self, graph, name, altitude_function=None):
+        Pathfinder.__init__(self, graph, altitude_function)
         self.name = name
         self.is_complete = False
         self.use_steps = False

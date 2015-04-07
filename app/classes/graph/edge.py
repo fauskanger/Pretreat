@@ -7,6 +7,7 @@ from app.pythomas import shapes as shapelib
 
 class Edge:
     def __init__(self, from_node, to_node):
+        self.z = config.world.z_indexes.path
         self.from_node = from_node
         self.to_node = to_node
         self.inner_from_shape = None
@@ -88,7 +89,7 @@ class Edge:
             if self.line_rectangle:
                 self.line_rectangle.delete()
             self.line_rectangle = shapelib.Rectangle(from_circle_point, to_circle_point,
-                                                     config.world.edge_thickness, colors_list=colors)
+                                                     config.world.edge_thickness, colors_list=colors, z=self.z-1)
 
             def add_triangles():
                 def delete_old_triangles():
@@ -106,7 +107,7 @@ class Edge:
                     position = lib.sum_points(from_circle_point, lib.multiply_points(steps, (i, i)))
                     triangle = shapelib.Triangle.create_with_centroid(centroid=position, base_width=triangle_base_width,
                                                                       height=triangle_height, rotation=theta,
-                                                                      color=triangle_color)
+                                                                      color=triangle_color, z=self.z)
                     self.line_triangles.append(triangle)
             add_triangles()
             inner_color = config.world.edge_in_node_color
@@ -116,9 +117,9 @@ class Edge:
             if self.inner_to_shape:
                 self.inner_to_shape.delete()
             self.inner_from_shape = shapelib.Rectangle(from_node.get_position(), self.from_circle.get_position(),
-                                                       radius=inner_line_width, color=inner_color)
+                                                       radius=inner_line_width, color=inner_color, z=from_node.z+1)
             self.inner_to_shape = shapelib.Rectangle(to_node.get_position(), self.to_circle.get_position(),
-                                                     radius=inner_line_width,  color=inner_color)
+                                                     radius=inner_line_width,  color=inner_color, z=to_node.z+1)
 
     def set_color(self, color):
         self.color = color

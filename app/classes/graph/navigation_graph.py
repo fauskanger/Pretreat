@@ -17,18 +17,24 @@ class NavigationGraph():
         self.graph = nx.DiGraph()
         # self.selected_nodes = []
         self.altitude_image = pyglet.resource.image(lib.resource(config.strings.altitude_map))
-        self.pathfinder = AStarPathfinder(self.graph)
+        self.pathfinder = AStarPathfinder(self.graph, self.altitude_function)
         self.pathfinder.push_handlers(self)
         self.node_positions_dirty = False   # Node positions
         self.node_set_dirty = False         # Adding/Removing nodes
         self.node_selected_dirty = False    # Selected/deselected nodes
+        self.render_batch = pyglet.graphics.Batch()
 
     def get_altitude(self, position):
         min_altitude = config.world.min_altitude
         max_altitude = config.world.max_altitude
-        pixel_value = lib.get_pixel(self.altitude_image, position)[0]/255
+        pixel_value = 1 - lib.get_pixel(self.altitude_image, position)[0]/255
         altitude = (max_altitude - min_altitude) * pixel_value + min_altitude
         return altitude
+
+    def altitude_function(self, from_node, to_node):
+        to_alt = self.get_altitude(to_node.get_position())
+        from_alt = self.get_altitude(from_node.get_position())
+        return to_alt - from_alt
 
     def create_node(self, position):
         x, y = position
@@ -279,13 +285,14 @@ class NavigationGraph():
             node.set_label(label)
 
     # TODO: batched rendering of primitives
-    def draw(self, batch=None):
+    def draw(self):
         selected_nodes = self.get_selected_nodes()
         path_edges = self.pathfinder.get_path_edges()
+        batch = self.render_batch
 
         def draw_path():
             if self.pathfinder:
-                self.pathfinder.draw()
+                self.pathfinder.draw(batch)
         draw_path()
 
         def draw_edges():
@@ -297,10 +304,8 @@ class NavigationGraph():
         draw_edges()
 
         def draw_selected_nodes():
-            def draw_node_as_selected(node):
-                node.draw_selected_indicator()
             for selected_node in selected_nodes:
-                draw_node_as_selected(selected_node)
+                selected_node.draw_selected_indicator(batch)
         draw_selected_nodes()
 
         def draw_nodes():
@@ -310,19 +315,21 @@ class NavigationGraph():
                 if is_reading_data:
                     node_instance = node[0]
 
-                node_instance.draw_path()
+                node_instance.draw_path(batch)
                 if node_instance in selected_nodes:
-                    node_instance.draw(radius_offset=config.world.selected_radius_decrease)
+                    node_instance.draw(radius_offset=config.world.selected_radius_decrease, batch=batch)
                 else:
-                    node_instance.draw()
+                    node_instance.draw(batch=batch)
         draw_nodes()
 
         def draw_node_labels():
             for node in self.graph.nodes():
                 node.draw_label()
         draw_node_labels()
+        self.render_batch.draw()
 
     def update(self, dt):
+        # ToDo: separate so only shapes will update from node_selected_dirty
         any_dirty = self.node_positions_dirty or self.node_set_dirty or self.node_selected_dirty
 
         if self.pathfinder and any_dirty:
@@ -387,24 +394,24 @@ class NavigationGraph():
                     self.add_node(node)
                 odd = not odd
 
-        w2 = col_step * col_step
-        h2 = row_step * row_step
-        if w2 < h2:
-            w2 /= 4
-        else:
-            h2 /= 4
-        max_near_distance = math.sqrt(w2 + h2) + 5
-
-        random.shuffle(nodes)
-
-        for node in nodes:
-            def is_near(candidate):
-                return NavigationGraph.get_node_distance(candidate, node) < max_near_distance
-            neighbors = [candidate for candidate in nodes if is_near(candidate)]
-            for neighbor in neighbors:
-                if self.graph.degree(neighbor) < 8:
-                    val = random.random()*100
-                    if val > 50:
-                        self.add_edge(neighbor, node)
-                    elif val > 10:
-                        self.add_edge(node, neighbor)
+        # w2 = col_step * col_step
+        # h2 = row_step * row_step
+        # if w2 < h2:
+        #     w2 /= 4
+        # else:
+        #     h2 /= 4
+        # max_near_distance = math.sqrt(w2 + h2) + 5
+        #
+        # random.shuffle(nodes)
+        #
+        # for node in nodes:
+        #     def is_near(candidate):
+        #         return NavigationGraph.get_node_distance(candidate, node) < max_near_distance
+        #     neighbors = [candidate for candidate in nodes if is_near(candidate)]
+        #     for neighbor in neighbors:
+        #         if self.graph.degree(neighbor) < 8:
+        #             val = random.random()*100
+        #             if val > 50:
+        #                 self.add_edge(neighbor, node)
+        #             elif val > 10:
+        #                 self.add_edge(node, neighbor)
