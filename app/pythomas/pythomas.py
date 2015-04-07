@@ -5,6 +5,12 @@ import math
 from app.config import config, Colors
 
 
+def resource(filename):
+    path = '{0}/{1}'.format(config.strings.resource_path, filename)
+    print("Resource path concat: {0}".format(path))
+    return path
+
+
 def db_connection():
     return sqlite3.connect(resource(config.strings.sqlite3_filename))
 
@@ -77,12 +83,6 @@ def flatten_list_of_tuples(list_of_tuples):
     for t in list_of_tuples:
         value_list.extend(t)
     return value_list
-
-
-def resource(filename):
-    path = '{0}/{1}'.format(config.strings.resource_path, filename)
-    print("Resource path concat: {0}".format(path))
-    return path
 
 
 def get_decomposed_direction_using_slope(distance, slope):
@@ -376,5 +376,5 @@ class PygletLib:
         tuple_list = [p1, p2, p3, p4]
         for coordinate in tuple_list:
             points.extend(coordinate)
-        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', points))
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, (config.world.vertex_mode, points))
 

@@ -5,19 +5,34 @@ from app.config import config
 
 
 class Shape(object):
-    def __init__(self, position, color=None, color_list=None, mode=pyglet.gl.GL_POLYGON, anchor=None):
+    def __init__(self, position, color=None, color_list=None, mode=pyglet.gl.GL_POLYGON, anchor=None, batch=None):
         self.x = position[0]
         self.y = position[1]
-        self.vertex_list = None
-        self.draw_points_list = None  # self.create_draw_points()
+        # self.draw_points_list = None  # self.create_draw_points()
         self.vertex_list = None  # self.create_vertex_list()
+        if False:
+            self.vertex_list = pyglet.graphics.vertex_list(0, None)
         self.translate = None
-        self.color_list = color_list
+        self.color_list = [] if not color_list else color_list
         self.color = color
         if color is not None:
             self.color_list = None
         self.mode = mode
         self.rotation_anchor = self.get_position() if not anchor else anchor
+        self.batch = batch
+        self.batch_group = None  # batch parameter
+        self.added_to_batch = False
+        self.is_initialized = False
+
+    def set_batch(self, batch):
+        if batch != self.batch:
+            self.batch = batch
+            self.update_shape(dirty=True)
+
+    # def get_batch_parameters(self):
+    #     data = (config.world.vertex_mode, self.vertex_list.vertices), \
+    #            (config.world.color_mode, self.vertex_list.colors)
+    #     return self.vertex_list.count, self.mode, self.batch_group, data
 
     def delete(self):
         if self.vertex_list:
@@ -28,7 +43,7 @@ class Shape(object):
         self.x = int(new_position[0])
         self.y = int(new_position[1])
         self.set_anchor(lib.sum_points(translation, self.rotation_anchor))
-        self.update_shape()
+        self.update_shape(dirty=True)
 
     def move(self, translation):
         self.set_position(lib.sum_points(self.get_position(), translation))
@@ -47,16 +62,16 @@ class Shape(object):
         self.vertex_list.vertices = rotated_points
         return self.vertex_list.vertices
 
-    def update_draw_points(self):
-        if self.translate and self.draw_points_list:
-            translated_points = lib.get_translated_list_of_coords(
-                self.vertex_list.vertices,
-                self.vertex_list.count,
-                self.translate)
-            self.draw_points_list = translated_points
-            self.translate = None
-        else:
-            self.draw_points_list = self.create_draw_points()
+    # def update_draw_points(self):
+    #     if self.translate and self.draw_points_list:
+    #         translated_points = lib.get_translated_list_of_coords(
+    #             self.vertex_list.vertices,
+    #             self.vertex_list.count,
+    #             self.translate)
+    #         self.draw_points_list = translated_points
+    #         self.translate = None
+    #     else:
+    #         self.draw_points_list = self.create_draw_points()
 
     def create_draw_points(self):
         return None
@@ -69,56 +84,88 @@ class Shape(object):
         self.update_color_list()
         self.vertex_list.colors = self.color_list
 
-    def update_color_list(self, number_of_vertices=None):
-        if number_of_vertices is None:
-            number_of_vertices = self.vertex_list.count
+    def update_color_list(self, number_of_vertices):
+        # if number_of_vertices is None and self.vertex_list:
+        #     number_of_vertices = self.vertex_list.count
+        # else:
+        #     return None
         count_needed = 3*number_of_vertices
 
         def get_diff():
             return len(self.color_list) - count_needed
-        if self.color is not None:
+        if self.color:
             self.color_list = list(self.color*number_of_vertices)
         elif self.color_list is None:
             print("Warning: Updated color to red from default color.")
             self.color_list = list(lib.colors.red*number_of_vertices)
-        elif self.color_list is not None and get_diff() != 0:
+        elif get_diff() != 0:
             while get_diff() > 0:
-                self.color_list.remove(self.color_list[-3])
+                self.color_list.remove(self.color_list[-1])
             while get_diff() < 0:
-                self.color_list.append(self.color_list[:3])
+                self.color_list.append(self.color_list[0])
         return self.color_list
 
     def create_vertex_list(self):
         # Create a vertex list from shape attributes
-        if self.draw_points_list is None:
+        points = self.create_draw_points()
+        if False:
+            points = []
+        if points is None:
             return None
-        number_of_vertices = int(len(self.draw_points_list)/2)
+        number_of_vertices = int(len(points)/2)
         self.update_color_list(number_of_vertices)
-        vertex_list = pyglet.graphics.vertex_list(number_of_vertices, 'v2f', config.world.color_mode)
-        vertex_list.vertices = self.draw_points_list
-        vertex_list.colors = self.color_list
-        return vertex_list
 
-    def update_vertex_list_points(self):
-        self.vertex_list = self.create_vertex_list()
+        if self.batch:
+            if self.vertex_list:
+                self.vertex_list.delete()
+            data = (config.world.vertex_mode, tuple(points)), \
+                   (config.world.color_mode, tuple(self.color_list))
+            self.vertex_list = self.batch.add(number_of_vertices, self.mode, self.batch_group, *data)
+        else:
+            self.vertex_list = pyglet.graphics.vertex_list(number_of_vertices,
+                                                           config.world.vertex_mode,
+                                                           config.world.color_mode)
+        return self.vertex_list
 
-    def update_shape(self):
+    # def update_vertex_list_points(self):
+    #     if self.draw_points_list is None:
+    #         return
+    #     number_of_vertices = len(self.draw_points_list)/2
+    #     if not number_of_vertices.is_integer():
+    #         raise Exception("Half points are not possible!?!")
+    #     else:
+    #         number_of_vertices = int(number_of_vertices)
+    #     if self.batch and not self.added_to_batch:
+    #         data = (config.world.vertex_mode, self.draw_points_list), \
+    #                (config.world.color_mode, self.color_list)
+    #         self.vertex_list = self.batch.add(number_of_vertices, self.mode, None, *data)
+    #         self.added_to_batch = True
+    #     elif self.vertex_list is None:
+    #         self.vertex_list = self.create_vertex_list()
+    #     else:
+    #         self.vertex_list.vertices = self.draw_points_list
+    #         self.vertex_list.colors = self.color_list
+
+    def update_shape(self, dirty=False):
         # if not self.translate and not self.draw_points_list:
-        self.update_draw_points()
-        self.update_vertex_list_points()
+        # self.update_draw_points()
+        if not self.is_initialized or dirty:
+            self.create_vertex_list()
+            self.is_initialized = True
 
     def draw(self, batch=None):
         # TODO: Fix batched draw
-        batch = None
         if self.vertex_list is None:
             return
-        if batch is None:
+        if batch and not self.batch:
+            self.set_batch(batch)
+        elif self.batch is None:
             # pyglet.graphics.draw(self.vertex_list.get_size(), mode, self.vertex_list)
             self.vertex_list.draw(self.mode)
-        else:
-            batch.add(self.vertex_list.get_size(), self.mode, None,
-                      ('v2f', self.vertex_list.vertices),
-                      (config.world.color_mode, self.vertex_list.colors))
+        # else:
+        #     data = (config.world.vertex_mode, tuple(self.vertex_list.vertices)), \
+        #            (config.world.color_mode, tuple(self.vertex_list.colors))
+        #     batch.add(self.vertex_list.get_size(), self.mode, None, *data)
 
     def get_centroid(self):
         return lib.average_list_of_points(
@@ -127,8 +174,8 @@ class Shape(object):
 
 
 class Circle(Shape):
-    def __init__(self, position, radius, color):
-        Shape.__init__(self, position, color, mode=pyglet.gl.GL_TRIANGLE_FAN)
+    def __init__(self, position, radius, color, batch=None):
+        Shape.__init__(self, position, color, mode=pyglet.gl.GL_TRIANGLE_FAN, batch=batch)
         self.radius = radius
         self.update_shape()
 
@@ -146,9 +193,9 @@ class Circle(Shape):
 
 
 class Rectangle(Shape):
-    def __init__(self, start_point, end_point, radius, colors_list=None, color=None):
+    def __init__(self, start_point, end_point, radius, colors_list=None, color=None, batch=None):
         Shape.__init__(self, position=lib.get_middle(start_point, end_point),
-                       color=color, color_list=colors_list, mode=pyglet.gl.GL_QUADS)
+                       color=color, color_list=colors_list, mode=pyglet.gl.GL_QUADS, batch=batch)
         x1 = start_point[0]
         y1 = start_point[1]
         x2 = end_point[0]
@@ -180,9 +227,9 @@ class Rectangle(Shape):
 
 class Triangle(Shape):
     def __init__(self, base_center, base_width, height=None, rotation=0.0,
-                 colors_list=None, color=None, anchor=None):
-        Shape.__init__(self, position=base_center,
-                       color=color, color_list=colors_list, mode=pyglet.gl.GL_TRIANGLES, anchor=anchor)
+                 colors_list=None, color=None, anchor=None, batch=None):
+        Shape.__init__(self, position=base_center, color=color, color_list=colors_list,
+                       mode=pyglet.gl.GL_TRIANGLES, anchor=anchor, batch=batch)
         if height is None:
             height = base_width * 0.866  # math.sqrt(3)/2
         self.width = base_width
@@ -222,16 +269,16 @@ class Triangle(Shape):
 
     def set_height(self, height):
         self.height = height
-        self.update_shape()
+        self.update_shape(dirty=True)
 
     def set_width(self, width):
         self.width = width
-        self.update_shape()
+        self.update_shape(dirty=True)
 
 
 class OutlinedCircle(Circle):
-    def __init__(self, position, radius, color, border=1.5, outline_color=lib.colors.black):
-        Circle.__init__(self, position, radius, color)
+    def __init__(self, position, radius, color, border=1.5, outline_color=lib.colors.black, batch=None):
+        Circle.__init__(self, position, radius, color, batch=batch)
         self.border = border
         self.outlined_shape = Circle(position, radius+border, outline_color)
         self.is_drawing_outline = True

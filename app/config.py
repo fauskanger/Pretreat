@@ -1,4 +1,3 @@
-import math
 
 
 class Colors():
@@ -248,6 +247,7 @@ class Configurations():
                 return 0.2126*r/m + 0.7152*g/m + 0.0722*b/m
 
             self.color_mode = 'c3B'  # 'c4B' to include alpha, but some parts explicitly expect 3-tuples
+            self.vertex_mode = 'v2f'
             self.node_color = (0xCC, 0x99, 0x66)
             node_color_is_dark = bt709_relative_luminance(self. node_color) < 0.5
             self.node_label_color = colors.white if node_color_is_dark else colors.black
@@ -275,6 +275,8 @@ class Configurations():
             self.default_rand_seed = 13
 
     def __init__(self):
+        # Whether or not to run test window instead
+        self.test = True
         self.strings = self.Strings()
         self.window = self.Window()
         self.world = self.World()
