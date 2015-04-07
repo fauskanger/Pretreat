@@ -9,7 +9,7 @@ class Main():
         self.view = None
 
     def run(self):
-        print("Running application: {0}".format(self.title))
+        # print("Running application: {0}".format(self.title))
         self.view = View()
         self.view.run()
 
