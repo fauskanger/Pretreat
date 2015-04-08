@@ -23,15 +23,17 @@ This application is meant to provide the basic tools to illustrate and test such
   - Tested on Windows 7 and 8
   - IDE used: JetBrain's PyCharm (Free Academic Licence) [ [Download here](https://www.jetbrains.com/pycharm/download/) ]
 
-(Generally, http://www.lfd.uci.edu/~gohlke/pythonlibs/ has been a great source of Python libraries for other projects too.) 
+(It seems that http://www.lfd.uci.edu/~gohlke/pythonlibs/ is a great source of Python libraries across platforms and versions.) 
 
 ### Comments on the code
 ```python
-some_value = None
-if False:
-    some_value = SomeKnownType()
+class Foo:
+    def __init(self, bar=None):
+        self.bar = bar
+        if False:
+            self.bar = SomeKnownType()
 ```
-This is used in some places to improve autocompletion in PyCharm.
+The above is used to improve autocompletion in PyCharm, so that it will suggest attributes from `self.bar` relevant to the known type.
 
 ## How to use
   1. Create a directed graph by adding nodes and edges.
