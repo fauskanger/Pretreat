@@ -100,9 +100,10 @@ class MainWindow(BaseWindow):
                 for i in range(len(self.dragged_nodes)):
                     start_pos = self.dragged_node_start_positions[i]
                     node = self.dragged_nodes[i]
-                    diff = lib.sum_points(self.get_invert_coordinates(self.drag_click_start), (x, y))
+                    diff = lib.subtract_points((x, y), self.drag_click_start)
                     moved_pos = lib.sum_points(diff, start_pos)
-                    self.nav_graph.move_node(node, moved_pos)
+                    self.nav_graph.set_node_position(node, moved_pos)
+                    # self.nav_graph.update_node_edges(node)
 
     def on_mouse_release(self, x, y, button, modifiers):
         if button == mouse.MIDDLE:
@@ -119,16 +120,16 @@ class MainWindow(BaseWindow):
 
         if button == mouse.MIDDLE:
 
-            if node in selected_nodes:
-                def set_dragged_node():
-                    if self.dragged_nodes is None:
-                        self.dragged_nodes = selected_nodes
-                        self.drag_click_start = (x, y)
-                        self.dragged_node_start_positions = []
-                        for selected_node in self.dragged_nodes:
-                            self.dragged_node_start_positions.append(selected_node.get_position())
+            # if node in selected_nodes:
+            def set_dragged_node():
+                if self.dragged_nodes is None:
+                    self.dragged_nodes = selected_nodes
+                    self.drag_click_start = (x, y)
+                    self.dragged_node_start_positions = []
+                    for selected_node in self.dragged_nodes:
+                        self.dragged_node_start_positions.append(selected_node.get_position())
 
-                set_dragged_node()
+            set_dragged_node()
 
         if button == mouse.LEFT:
 

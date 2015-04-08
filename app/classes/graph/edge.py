@@ -52,11 +52,11 @@ class Edge:
         theta = math.atan2(to_y-from_y, to_x-from_x)
 
         def get_pos_offset(node):
-            offset_radius = config.world.edge_lane_offset
+            lane_offset = config.world.edge_lane_offset
             if node.is_selected() and config.world.adjust_edge_to_selection:
-                offset_radius += config.world.selected_radius_decrease
-            dx = offset_radius * math.sin(theta)
-            dy = offset_radius * math.cos(theta)
+                lane_offset += config.world.selected_radius_decrease
+            dx = lane_offset * math.sin(theta)
+            dy = lane_offset * math.cos(theta)
             offset = dx, -dy
             return offset
 
@@ -64,14 +64,16 @@ class Edge:
         to_offset = get_pos_offset(to_node)
         from_position = lib.sum_points(from_node.get_position(), from_offset)
         to_position = lib.sum_points(to_node.get_position(), to_offset)
+        from_radius_offset = 3
+        to_radius_offset = from_radius_offset
 
         from_circle_point = lib.get_point_on_circle(circle_center=from_node.get_position(),
-                                                    radius=from_node.get_visual_radius(),
+                                                    radius=from_node.get_visual_radius()+from_radius_offset,
                                                     line_point=from_position,
                                                     direction_point=to_position)
 
         to_circle_point = lib.get_point_on_circle(circle_center=to_node.get_position(),
-                                                  radius=to_node.get_visual_radius(),
+                                                  radius=to_node.get_visual_radius()+to_radius_offset,
                                                   line_point=to_position,
                                                   direction_point=from_position)
 

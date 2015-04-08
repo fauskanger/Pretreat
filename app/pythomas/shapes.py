@@ -50,17 +50,22 @@ class Shape(object):
     def delete(self):
         if self.vertex_list:
             self.vertex_list.delete()
+            self.vertex_list = None
 
     def set_position(self, new_position):
         x, y = new_position
-        translation = x - self.x, y - self.y
+        dx, dy = x - self.x, y - self.y
         self.x = x
         self.y = y
-        self.set_anchor(lib.sum_points(translation, self.rotation_anchor))
-        self.update_shape(dirty=True)
+        self.set_anchor(lib.sum_points((dx, dy), self.rotation_anchor))
+        if self.vertex_list:
+            for i in range(self.vertex_list.count):
+                xi, yi = 2*i, 2*i+1
+                self.vertex_list.vertices[xi] += dx
+                self.vertex_list.vertices[yi] += dy
 
-    def move(self, translation):
-        self.set_position(lib.sum_points(self.get_position(), translation))
+    def move(self, dx, dy):
+        self.set_position(lib.sum_points(self.get_position(), (dx, dy)))
 
     def set_anchor(self, anchor_point):
         self.rotation_anchor = anchor_point
@@ -121,6 +126,7 @@ class Shape(object):
 
         if self.vertex_list:
             self.vertex_list.delete()
+            self.vertex_list = None
         if self.batch:
             data = (config.world.vertex_mode, tuple(points)), \
                    (config.world.color_mode, tuple(self.color_list))
@@ -287,6 +293,10 @@ class OutlinedCircle(Circle):
     def set_position(self, new_position):
         super(OutlinedCircle, self).set_position(new_position)
         self.outlined_shape.set_position(new_position)
+
+    def move(self, dx, dy):
+        super(OutlinedCircle, self).move(dx, dy)
+        self.outlined_shape.move(dx, dy)
 
     def set_radius(self, radius):
         super(OutlinedCircle, self).set_radius(radius)

@@ -23,6 +23,8 @@ class NavigationGraph():
         self.node_set_dirty = False         # Adding/Removing nodes
         self.node_selected_dirty = False    # Selected/deselected nodes
         self.render_batch = pyglet.graphics.Batch()
+        self.edge_update_timer = 0
+        self.update_edge_on_next = []
 
     def get_altitude(self, position):
         min_altitude = config.world.min_altitude
@@ -124,8 +126,8 @@ class NavigationGraph():
     def update_node_edges(self, node):
         for neighbor_node in nx.all_neighbors(self.graph, node):
             def update_edge_weight(from_node, to_node):
-                cost = self.pathfinder.get_edge_cost(from_node, to_node)
                 if self.graph.has_edge(from_node, to_node):
+                    cost = self.pathfinder.get_edge_cost(from_node, to_node)
                     self.graph[from_node][to_node][config.strings.wgt] = cost
 
             def update_edge_shape(from_node, to_node):
@@ -192,18 +194,25 @@ class NavigationGraph():
         self.update_node_labels()
         return True
 
-    def add_nodes_from(self, list_of_nodes):
-        self.graph.add_nodes_from(list_of_nodes)
-        self.node_set_dirty = True
-        self.update_node_labels()
+    # def add_nodes_from(self, list_of_nodes):
+    #     self.graph.add_nodes_from(list_of_nodes)
+    #     self.node_set_dirty = True
+    #     self.update_node_labels()
 
-    def move_node(self, node, position):
-        if node is None or not self.is_valid_node_position(position, node_exceptions=[node]):
+    def move_node(self, node, dx, dy):
+        x, y = node.get_position()
+        new_position = x+dx, y+dy
+        if node is None or not self.is_valid_node_position(new_position, node_exceptions=[node]):
             return False
 
-        node.set_position(position)
+        node.move(dx, dy)
+        if node not in self.update_edge_on_next:
+            self.update_edge_on_next.append(node)
         self.node_positions_dirty = True
-        self.update_node_edges(node)
+
+    def set_node_position(self, node, new_position):
+        dx, dy = lib.subtract_points(new_position, node.get_position())
+        self.move_node(node, dx, dy)
 
     def remove_node(self, node):
         if node is None:
@@ -215,6 +224,7 @@ class NavigationGraph():
         except nx.NetworkXError:
             return False
         else:
+            node.delete()
             self.node_set_dirty = True
             if self.pathfinder:
                 self.pathfinder.clear_node(node)
@@ -223,6 +233,8 @@ class NavigationGraph():
 
     def add_edge(self, from_node, to_node):
         if from_node is None or to_node is None or from_node == to_node:
+            return False
+        if self.graph.has_edge(from_node, to_node):
             return False
         weight = self.pathfinder.get_edge_cost(from_node, to_node)
         try:
@@ -234,6 +246,9 @@ class NavigationGraph():
             return True
 
     def remove_edge(self, from_node, to_node):
+        edge = self.get_edge_object((from_node, to_node))
+        if edge:
+            edge.delete()
         if from_node is None or to_node is None:
             return False
         try:
@@ -322,11 +337,12 @@ class NavigationGraph():
                     node_instance.draw(batch=batch)
         draw_nodes()
 
+        self.render_batch.draw()
+
         def draw_node_labels():
             for node in self.graph.nodes():
                 node.draw_label()
         draw_node_labels()
-        self.render_batch.draw()
 
     def update(self, dt):
         # ToDo: separate so only shapes will update from node_selected_dirty
@@ -336,6 +352,12 @@ class NavigationGraph():
             self.pathfinder.update_to_new_path()
         else:
             self.pathfinder.update(dt)
+
+        self.edge_update_timer += dt
+        if self.edge_update_timer > 1/30:
+            for node in self.update_edge_on_next:
+                self.update_node_edges(node)
+            self.update_edge_on_next = []
 
         self.node_positions_dirty = False
         self.node_set_dirty = False

@@ -32,10 +32,10 @@ class Node:
         self.text_label = pyglet.text.Label(text_label,
                                             font_name='Times New Roman',
                                             font_size=0.61*self.current_radius,
-                                            x=self.x+30, y=self.y+30,
+                                            x=self.x, y=self.y,
                                             anchor_x='center', anchor_y='center',
                                             color=lib.rgba(config.world.node_label_color),
-                                            group=pyglet.graphics.OrderedGroup(100000))
+                                            group=pyglet.graphics.OrderedGroup(-100000))
         self.altitude = altitude
         self.content = content
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
@@ -60,13 +60,16 @@ class Node:
     def set_as_path_node(self, is_path_node=True):
         self.is_path_node = is_path_node
         if is_path_node:
-                pos = self.get_position()
-                radius = self.get_visual_radius()+5
-                color = config.world.path_edge_color
-                if not self.path_circle:
-                    self.path_circle = shapelib.OutlinedCircle(pos, radius, color, z=config.world.z_indexes.path, dz=10)
-                self.path_circle.set_position(pos)
-                self.path_circle.set_radius(radius)
+            pos = self.get_position()
+            radius = self.get_visual_radius()+5
+            color = config.world.path_edge_color
+            if not self.path_circle:
+                self.path_circle = shapelib.OutlinedCircle(pos, radius, color, z=config.world.z_indexes.path, dz=10)
+            self.path_circle.set_position(pos)
+            self.path_circle.set_radius(radius)
+        else:
+            if self.path_circle:
+                self.path_circle.delete()
 
     def is_selected(self):
         return self._is_selected
@@ -75,10 +78,10 @@ class Node:
         if not self.is_selected() and self.select_circle:
             self.select_circle.delete()
             self.select_circle = None
-        else:
+        elif self.is_selected():
             selected_radius = self.get_radius() + config.world.selected_radius_increase
             color = config.world.selected_node_color
-            if self.select_circle is None:
+            if self.select_circle is None or self.select_circle.radius != selected_radius:
                 self.select_circle = shapelib.OutlinedCircle(position=self.get_position(), radius=selected_radius,
                                                              color=color, z=self.z-20)
             # self.select_circle.set_radius(selected_radius)
@@ -94,20 +97,20 @@ class Node:
         self.set_color(Node.get_state_color(state))
         self.state = state
 
+    def move(self, dx, dy):
+        self.set_position((self.x + dx, self.y + dy))
+
     def set_position(self, new_position):
         if new_position is None:
             return False
-        self.x = new_position[0]
-        self.y = new_position[1]
+        self.x, self.y = new_position
         self.circle.set_position(new_position)
         self.text_label.x, self.text_label.y = new_position
-        if self.select_circle is not None:
+        if self.select_circle:
             self.select_circle.set_position(new_position)
-        self.update_parameters()
+        if self.path_circle:
+            self.path_circle.set_position(new_position)
         return True
-
-    def update_parameters(self):
-        pass
 
     def get_radius(self):
         return self.current_radius

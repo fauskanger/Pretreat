@@ -92,7 +92,7 @@ class Configurations():
             self.edge_thickness = self.node_radius/7
             self.edge_end_radius = self.edge_thickness
             self.edge_triangles_width = 4*self.edge_thickness
-            self.edge_lane_offset = max(self.edge_thickness, self.edge_triangles_width)*0.61
+            self.edge_lane_offset = max(self.edge_thickness, self.edge_triangles_width)*0.4
             self.adjust_edge_to_selection = True
 
             self.default_rand_seed = 13
