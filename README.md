@@ -25,6 +25,14 @@ This application is meant to provide the basic tools to illustrate and test such
 
 (Generally, http://www.lfd.uci.edu/~gohlke/pythonlibs/ has been a great source of Python libraries for other projects too.) 
 
+### Comments on the code
+```python
+some_value = None
+if False:
+    some_value = SomeKnownType()
+```
+This is used in some places to improve autocompletion in PyCharm.
+
 ## How to use
   1. Create a directed graph by adding nodes and edges.
   2. Set start and destination nodes.
