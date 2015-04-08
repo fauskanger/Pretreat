@@ -8,7 +8,7 @@ from app.config import config, seeded_random as random
 from app.pythomas import pythomas as lib
 from app.classes.graph.node import Node
 from app.classes.graph.edge import Edge
-from app.classes.graph.pathfinder import AStarPathfinder
+from app.classes.graph.pathfinder import AStarPathfinder, CustomPathfinder
 from app.classes.graph.pretreat_pathfinder import PretreatPathfinder
 
 
@@ -345,30 +345,33 @@ class NavigationGraph():
         draw_node_labels()
 
     def update(self, dt):
-        # ToDo: separate so only shapes will update from node_selected_dirty
-        any_dirty = self.node_positions_dirty or self.node_set_dirty or self.node_selected_dirty
-
-        if self.pathfinder and any_dirty:
-            self.pathfinder.update_to_new_path()
-        else:
-            self.pathfinder.update(dt)
-
-        self.edge_update_timer += dt
-        if self.edge_update_timer > 1/30:
-            for node in self.update_edge_on_next:
-                self.update_node_edges(node)
-            self.update_edge_on_next = []
+        self.update_path(dt)
+        self.update_edges(dt)
 
         self.node_positions_dirty = False
         self.node_set_dirty = False
         self.node_selected_dirty = False
 
-    def start_pathfinding(self):
-        self.update_path()
+    def update_edges(self, dt):
+        self.edge_update_timer += dt
+        if self.edge_update_timer > config.world.edge_refresh_interval:
+            for node in self.update_edge_on_next:
+                self.update_node_edges(node)
+            self.update_edge_on_next.clear()
 
-    def update_path(self):
-        if self.pathfinder:
+    def update_path(self, dt):
+        must_reevaluate_path = self.node_positions_dirty or self.node_set_dirty
+        # must_refresh_path = self.node_selected_dirty
+        if self.pathfinder and must_reevaluate_path:
             self.pathfinder.update_to_new_path()
+        else:
+            self.pathfinder.update(dt)
+
+    def start_pathfinding(self):
+        self.pathfinder.start()
+
+    def refresh_path_radius(self):
+        pass
 
     def find_nearest_nodes(self, node, number_of_hits=1, candidates=None, exceptions=()):
         candidates = self.graph.nodes() if not candidates else candidates

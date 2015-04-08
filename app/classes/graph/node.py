@@ -61,7 +61,7 @@ class Node:
         self.is_path_node = is_path_node
         if is_path_node:
             pos = self.get_position()
-            radius = self.get_visual_radius()+5
+            radius = self.get_visual_radius()+config.world.path_radius_increase
             color = config.world.path_edge_color
             if not self.path_circle:
                 self.path_circle = shapelib.OutlinedCircle(pos, radius, color, z=config.world.z_indexes.path, dz=10)
@@ -87,10 +87,23 @@ class Node:
             # self.select_circle.set_radius(selected_radius)
             # self.select_circle.set_color(color)
 
+    def update_path_indicator(self):
+        circle = self.path_circle
+        pos = self.get_position()
+        radius = self.get_visual_radius()+config.world.path_radius_increase
+        color = config.world.path_edge_color
+        if circle.get_position() != pos:
+            circle.set_position(pos)
+        if circle.radius != radius:
+            circle.set_radius(radius)
+        if circle.color != color:
+            circle.set_color(color)
+
     def set_radius(self, new_radius):
         self.current_radius = new_radius
         self.circle.set_radius(self.current_radius)
         self.update_selected_indicator()
+        self.update_path_indicator()
 
     def set_state(self, state):
         print("Setting new state: {0}".format(state))
@@ -116,8 +129,8 @@ class Node:
         return self.current_radius
 
     def get_padded_radius(self):
-        padding = config.world.selected_radius_increase+config.world.node_padding
-        return self.get_radius() + padding
+        padding = config.world.node_padding
+        return self.get_visual_radius() + padding
 
     def get_visual_radius(self):
         extra = 0.0
@@ -155,6 +168,9 @@ class Node:
 
     def set_color(self, color):
         self.circle.set_color(color)
+
+    def get_color(self):
+        return self.circle.color if self.circle.color else config.world.node_color
 
     def delete(self):
         if self.circle:
