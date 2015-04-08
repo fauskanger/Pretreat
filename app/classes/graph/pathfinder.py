@@ -18,8 +18,13 @@ class Pathfinder(pyglet.event.EventDispatcher):
         self.start_node = None
         self.destination_node = None
         self.path = None
+        if False:
+            self.path = Path(None)
         self.register_event_type(Pathfinder.get_event_type_on_path_update())
         self.altitude_function = altitude_function
+
+    def start(self):
+        self.update_to_new_path()
 
     def get_path(self):
         if self.path is None:
@@ -77,9 +82,11 @@ class Pathfinder(pyglet.event.EventDispatcher):
         return None
 
     def update(self, dt):
-        if self.start_node:
-            self.start_node.set_color(config.world.start_node_color)
-        if self.destination_node:
+        start_color = config.world.start_node_color
+        destination_color = config.world.destination_node_color
+        if self.start_node and self.start_node.get_color() != start_color:
+            self.start_node.set_color()
+        if self.destination_node and self.destination_node.get_color() != destination_color:
             self.destination_node.set_color(config.world.destination_node_color)
         if self.path:
             self.path.update(dt)

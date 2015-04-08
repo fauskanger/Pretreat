@@ -104,7 +104,7 @@ class Edge:
                 triangle_height = 0.866 * triangle_base_width  # sqrt(3)/2
                 triangle_count = int(line_distance / triangle_height)
                 pdx, pdy = point_difference
-                steps = pdx/triangle_count, pdy/triangle_count
+                steps = (0, 0) if triangle_count < 1 else (pdx/triangle_count, pdy/triangle_count)
                 for i in range(triangle_count):
                     position = lib.sum_points(from_circle_point, lib.multiply_points(steps, (i, i)))
                     triangle = shapelib.Triangle.create_with_centroid(centroid=position, base_width=triangle_base_width,

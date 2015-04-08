@@ -33,8 +33,10 @@ class Foo:
         if False:
             self.bar = SomeKnownType()
 ```
-The above is used to improve autocompletion in PyCharm, so that it will suggest attributes from `self.bar` relevant to the known type.
-This is not only used in `__init__`, but the hidden type of `bar` is an example of motivation.
+The above is used to improve autocompletion in PyCharm, 
+so that it will suggest attributes from `self.bar` relevant to the known type.
+This is not only used in `__init__`, but the hidden type of `bar` is an example of motivation, 
+and IDE-functionality like "Go to declaration" is another.
 
 ## How to use
   1. Start application with run.py

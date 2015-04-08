@@ -7,12 +7,9 @@ class Path:
     def __init__(self, path_nodes):
         path_nodes = None if path_nodes == [None] else path_nodes
         self.nodes = [] if not path_nodes else path_nodes
-        self.circles = dict()
-        self.triangles = dict()
         self.complete = False
         if path_nodes:
             self.complete = True
-            self.update_node_circles()
 
     def add_node(self, node, index=None):
         if node in self.nodes:
@@ -24,23 +21,37 @@ class Path:
         return True
 
     def remove_node(self, node):
-        if node in self.circles:
-            self.circles[node].delete()
-        del self.circles[node]
         return lib.try_remove(self.nodes, node)
 
-    def update_node_circles(self):
-        for node in self.nodes:
-            if node not in self.circles:
-                pos = node.get_position()
-                radius = node.get_visual_radius()+5
-                color = config.world.path_edge_color
-                if node in self.circles:
-                    self.circles[node].delete()
-                self.circles[node] = shapelib.Circle(pos, radius, color)
+    # def update_node_circles(self):
+    #     for node in self.circles:
+    #         circle = self.circles[node]
+    #         pos = node.get_position()
+    #         radius = node.get_visual_radius()+5
+    #         color = config.world.path_edge_color
+    #         if circle.get_position() != pos:
+    #             circle.set_position(pos)
+    #         if circle.radius != radius:
+    #             circle.set_radius(radius)
+    #         if circle.color != color:
+    #             circle.set_color(color)
+
+    # def create_node_circle(self, node):
+    #     pos = node.get_position()
+    #     radius = node.get_visual_radius()+5
+    #     color = config.world.path_edge_color
+    #     if node in self.circles:
+    #         self.circles[node].delete()
+    #     self.circles[node] = shapelib.Circle(pos, radius, color)
+
+    # def create_node_circles(self):
+    #     for node in self.nodes:
+    #         if node not in self.circles:
+    #             self.create_node_circle(node)
 
     def update(self, dt):
-        self.update_node_circles()
+        # self.update_node_circles()
+        pass
 
     def draw(self, batch=None):
         pass
@@ -48,8 +59,9 @@ class Path:
         #     self.circles[key].draw(batch)
 
     def delete(self):
-        for key in self.circles:
-            self.circles[key].delete()
+        # for key in self.circles:
+        #     self.circles[key].delete()
+        pass
 
     def get_edge_list(self):
         nodes = self.get_node_list()
