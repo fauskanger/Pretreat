@@ -28,17 +28,19 @@ This application is meant to provide the basic tools to illustrate and test such
 ### Comments on the code
 ```python
 class Foo:
-    def __init(self, bar=None):
+    def __init__(self, bar=None):
         self.bar = bar
         if False:
             self.bar = SomeKnownType()
 ```
 The above is used to improve autocompletion in PyCharm, so that it will suggest attributes from `self.bar` relevant to the known type.
+This is not only used in `__init__`, but the hidden type of `bar` is an motivational example.
 
 ## How to use
-  1. Create a directed graph by adding nodes and edges.
-  2. Set start and destination nodes.
-  3. Pathfinder starts when both ends are defined.
+  1. Start application with run.py
+  2. Create a directed graph by adding nodes and edges.
+  3. Set start and destination nodes.
+  4. Pathfinder starts when both ends are defined.
   
 
 LMB, RMB and MMB is short for Left/Right/Middle Mouse Button:
