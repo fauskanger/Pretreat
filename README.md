@@ -34,7 +34,7 @@ class Foo:
             self.bar = SomeKnownType()
 ```
 The above is used to improve autocompletion in PyCharm, so that it will suggest attributes from `self.bar` relevant to the known type.
-This is not only used in `__init__`, but the hidden type of `bar` is an motivational example.
+This is not only used in `__init__`, but the hidden type of `bar` is an example of motivation.
 
 ## How to use
   1. Start application with run.py
