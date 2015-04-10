@@ -54,6 +54,8 @@ class NavigationGraph():
             is_path_node = node in path_nodes
             node.set_as_path_node(is_path_node=is_path_node)
 
+        self.redraw_all_edges()
+
     def get_selected_nodes(self):
         return [node for node in self.graph.nodes() if node.is_selected()]
 
@@ -156,7 +158,7 @@ class NavigationGraph():
         added = not node.is_selected()
         node.set_as_selected(selected=True)
         self.node_selected_dirty = True
-        self.update_node_edges(node)
+        self.redraw_edges(node)
         return added
 
     def deselect_node(self, node):
@@ -166,7 +168,7 @@ class NavigationGraph():
         removed = node.is_selected()
         node.set_as_selected(selected=False)
         self.node_selected_dirty = True
-        self.update_node_edges(node)
+        self.redraw_edges(node)
         return removed
 
     def select_node_at_position(self, position):
@@ -206,9 +208,16 @@ class NavigationGraph():
             return False
 
         node.move(dx, dy)
+        self.redraw_edges(node)
+        self.node_positions_dirty = True
+
+    def redraw_edges(self, node):
         if node not in self.update_edge_on_next:
             self.update_edge_on_next.append(node)
-        self.node_positions_dirty = True
+
+    def redraw_all_edges(self):
+        for node in self.graph.nodes():
+            self.update_edge_on_next.append(node)
 
     def set_node_position(self, node, new_position):
         dx, dy = lib.subtract_points(new_position, node.get_position())
@@ -271,7 +280,7 @@ class NavigationGraph():
 
     def remove_all_node_edges(self, node):
         for u, v in self.graph.edges():
-            if u == node or v == node:
+            if u is node or v is node:
                 self.graph.remove_edge(u, v)
 
     def get_edge_object(self, edge):
@@ -347,12 +356,17 @@ class NavigationGraph():
         draw_node_labels()
 
     def update(self, dt):
-        self.update_path(dt)
+        self.update_nodes(dt)
         self.update_edges(dt)
+        self.update_path(dt)
 
         self.node_positions_dirty = False
         self.node_set_dirty = False
         self.node_selected_dirty = False
+
+    def update_nodes(self, dt):
+        for node in self.graph.nodes():
+            node.update(dt)
 
     def update_edges(self, dt):
         self.edge_update_timer += dt
