@@ -226,6 +226,8 @@ class NavigationGraph():
         else:
             node.delete()
             self.node_set_dirty = True
+            if node in self.update_edge_on_next:
+                self.update_edge_on_next.remove(node)
             if self.pathfinder:
                 self.pathfinder.clear_node(node)
             self.update_node_labels()
