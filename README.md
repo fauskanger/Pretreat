@@ -71,11 +71,12 @@ When one or more nodes are selected:
 ### Pathfinding
 | Event         | Input         | Alternative |
 | :------------- |:-------------|:----|
-| Set Start | S + LMB| S, then LMB |
-| Set Destination | D + LMB| D, then LMB |
-| Complete Search\*      | Space |
+| Set Start | S + LMB| S, then LMB\* |
+| Set Destination | D + LMB| D, then LMB\* |
+| Complete Search\*\*      | Space |
 
-\*) Applicable when pathfinding algorithm is illustrated step by step.
+\*) S and D keypress might block trackpad's mouse-press. Not an issue when using a separate mouse.
+\*\*) Applicable when pathfinding algorithm is illustrated step by step.
 
 ### Miscellaneous
 | Event         | Input         |
