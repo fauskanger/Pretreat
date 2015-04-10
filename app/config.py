@@ -43,6 +43,7 @@ class Configurations():
                 self.background = -10000
                 self.path = -1000
                 self.node = -100
+                self.node_path = self.node-10
 
         def __init__(self):
             self.size_x = 18
@@ -89,7 +90,7 @@ class Configurations():
             self.node_radius = 20
             self.selected_radius_increase = max(0.3 * self.node_radius, 5)  # For the outer circle radius
             self.selected_radius_decrease = 0.61 * self.selected_radius_increase  # How much the node circle will shrink
-            self.path_radius_increase = self.selected_radius_increase*1.61
+            self.path_radius_increase = self.selected_radius_increase
             self.node_padding = 1/3 * self.node_radius
 
             self.edge_thickness = self.node_radius/7

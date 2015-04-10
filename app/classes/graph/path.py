@@ -23,44 +23,13 @@ class Path:
     def remove_node(self, node):
         return lib.try_remove(self.nodes, node)
 
-    # def update_node_circles(self):
-    #     for node in self.circles:
-    #         circle = self.circles[node]
-    #         pos = node.get_position()
-    #         radius = node.get_visual_radius()+5
-    #         color = config.world.path_edge_color
-    #         if circle.get_position() != pos:
-    #             circle.set_position(pos)
-    #         if circle.radius != radius:
-    #             circle.set_radius(radius)
-    #         if circle.color != color:
-    #             circle.set_color(color)
-
-    # def create_node_circle(self, node):
-    #     pos = node.get_position()
-    #     radius = node.get_visual_radius()+5
-    #     color = config.world.path_edge_color
-    #     if node in self.circles:
-    #         self.circles[node].delete()
-    #     self.circles[node] = shapelib.Circle(pos, radius, color)
-
-    # def create_node_circles(self):
-    #     for node in self.nodes:
-    #         if node not in self.circles:
-    #             self.create_node_circle(node)
-
     def update(self, dt):
-        # self.update_node_circles()
         pass
 
     def draw(self, batch=None):
         pass
-        # for key in self.circles:
-        #     self.circles[key].draw(batch)
 
     def delete(self):
-        # for key in self.circles:
-        #     self.circles[key].delete()
         pass
 
     def get_edge_list(self):
