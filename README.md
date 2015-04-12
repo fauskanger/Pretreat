@@ -50,19 +50,23 @@ class NavigationGraph():
         self.graph = nx.DiGraph()
         self.pathfinder = AStarPathfinder(self.graph, self.altitude_function)
         self.pathfinder.push_handlers(self)
-        # ...  
-          
-    def on_path_update(self, path):
         # ...
 ```
 
 The NavigationGraph class is a wrapper around 
 NetworkX' [DiGraph](http://networkx.github.io/documentation/networkx-1.9.1/tutorial/tutorial.html#directed-graphs) 
 class, and offers a convenient interface to common graph interactions. It calls `draw()` on all graph 
-objects, and also ties together a pathfinder to its graph. An `on_path_update`-event is dispatched when the pathfinder
+objects, and also ties together a pathfinder to its graph.
+
+```
+    def on_path_update(self, path):
+        # ...
+```
+
+An `on_path_update`-event is dispatched when the pathfinder
 has updated its path.
 
-```python
+```
 
     def create_node(self, position)
     def on_path_update(self, path)
@@ -75,7 +79,7 @@ has updated its path.
 
 Basic node operations. The `create_node` factory inserts the correct altitude into the node object at the position.
 
-```python
+```
     
     def _set_node_state(self, node, state)
     def set_node_state(self, node, state)
@@ -90,7 +94,7 @@ Basic node operations. The `create_node` factory inserts the correct altitude in
 
 Manage pathfinding. `_set_node_state` is used internally in the latter methods.
 
-```python
+```
     
     def toggle_select(self, node, compare=None)
     def select_node(self, node)
@@ -103,7 +107,7 @@ Manage pathfinding. `_set_node_state` is used internally in the latter methods.
 
 Control selection of nodes.
 
-```python
+```
     
     def add_edge(self, from_node, to_node)    
     def remove_edge(self, from_node, to_node)
@@ -125,7 +129,7 @@ Control selection of nodes.
     
 Edge management.
 
-```python
+```
 
     def get_altitude(self, position)
     def altitude_function(self, from_node, to_node)
@@ -134,7 +138,7 @@ Edge management.
 A height-map imported from file determines the terrain's altitude at a given position. This is used by pathfinder to
 consider path slopes. 
 
-```python
+```
     
     def get_node_from_position(self, position)
     def is_valid_node_position(self, position, node_exceptions=None)
@@ -145,7 +149,7 @@ consider path slopes.
 
 Some helper methods.    
 
-```python
+```
 
     def draw(self)
     def update(self, dt)
