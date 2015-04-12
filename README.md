@@ -39,20 +39,25 @@ This is not only used in `__init__`, but the hidden type of `bar` is an example 
 and IDE-functionality like "Go to declaration" is another.
 
 ### Some central components
-  - [NavigationGraph](app/classes/graph/navigation_graph.py) - Interactive graph w/pathfinder
+  - [NavigationGraph](app/classes/graph/navigation_graph.py) - Interactive graph w/pathfinder.
   - [Pathfinder](app/classes/graph/pathfinder.py) - Base for pathfinders, implementations of search algorithms.
   - [PretreatPathfinder](app/classes/graph/pretreat_pathfinder.py) - Custom pathfinder considering retreat.
   - [Path](app/classes/graph/path.py) - The intermediate or final result of a pathfinder, holding the path nodes.
   - [MainWindow](app/classes/windows/main_window.py) - Main window class.
+  - [Configurations](app/config.py) - Configurations, constants and setup for the applications.
 
-The NetworkX graph allows for the use of any node and edge representation. The graph contains all relations between
-them, so the representations don't have to. 
+The NetworkX graph allows for the use of 
+[any](https://networkx.github.io/documentation/latest/tutorial/tutorial.html#what-to-use-as-nodes-and-edges) 
+node and edge representation. The graph contains all relations between them, so the representations don't have to. 
 Read more about NetworkX node/edge attributes in their 
 [tutorial](https://networkx.github.io/documentation/latest/tutorial/tutorial.html#adding-attributes-to-graphs-nodes-and-edges).
 
 This project use the [Node](app/classes/graph/node.py) and 
-[Edge](app/classes/graph/edge.py) class to handle rendering and business-logic, 
-but can still put values essential to the pathfinder such as edge weights in the graph itself for efficiency. 
+[Edge](app/classes/graph/edge.py) class to handle rendering and graph-agnostic logic, 
+but can still put values essential to the pathfinder such as edge weights in the graph itself for efficiency.
+ 
+Pyglet offers no primitives, so the [pythomas shapes](app/pythomas/shapes.py) are used for all non-sprites. Also, 
+several modules depend on one or more of the functions in the [pythomas library](app/pythomas/pythomas.py).
 
 
 #### NavigationGraph
