@@ -67,7 +67,6 @@ An `on_path_update`-event is dispatched when the pathfinder
 has updated its path.
 
 ```
-
     def create_node(self, position)
     def on_path_update(self, path)
     
@@ -80,7 +79,6 @@ has updated its path.
 Basic node operations. The `create_node` factory inserts the correct altitude into the node object at the position.
 
 ```
-    
     def _set_node_state(self, node, state)
     def set_node_state(self, node, state)
     
@@ -95,7 +93,6 @@ Basic node operations. The `create_node` factory inserts the correct altitude in
 Manage pathfinding. `_set_node_state` is used internally in the latter methods.
 
 ```
-    
     def toggle_select(self, node, compare=None)
     def select_node(self, node)
     def deselect_node(self, node)
@@ -108,9 +105,9 @@ Manage pathfinding. `_set_node_state` is used internally in the latter methods.
 Control selection of nodes.
 
 ```
-    
     def add_edge(self, from_node, to_node)    
     def remove_edge(self, from_node, to_node)
+    def get_edge_object(self, edge)
     
     def create_edge_from_selected_to(self, node)
     def create_edge_to_selected_from(self, node)
@@ -120,17 +117,24 @@ Control selection of nodes.
     
     def remove_all_node_edges(self, node)
     
-    def get_edge_object(self, edge)
     def update_node_edges(self, node)
     def redraw_edges(self, node)
     def redraw_all_edges(self)
+```
+Edge management. Each edge is only refreshed on a configured interval, and the edges to be refreshed are managed
+through the last methods above. 
+
+`get_edge_object` is useful to retrieve the [Edge](app/classes/graph/edge.py)-instance, and accepts both a 
+(node_u, node\_v)-tuple or an edge returned from the `self.graph.edges()`-iterator. 
 
 ```
-    
-Edge management.
+    def block_node(self, node)
+    def unblock_node(self, node)
+```
+Add an occupant to the node, i.e. obstruct search algorithm in pathfinder from visiting the node. Currently this is
+ensured by setting any edge ending in an obstructed node to have an infinite cost in the form `float("inf")`.
 
 ```
-
     def get_altitude(self, position)
     def altitude_function(self, from_node, to_node)
 ```
@@ -139,7 +143,6 @@ A height-map imported from file determines the terrain's altitude at a given pos
 consider path slopes. 
 
 ```
-    
     def get_node_from_position(self, position)
     def is_valid_node_position(self, position, node_exceptions=None)
     def find_nearest_nodes(self, node, number_of_hits=1, candidates=None, exceptions=())
@@ -150,7 +153,6 @@ consider path slopes.
 Some helper methods.    
 
 ```
-
     def draw(self)
     def update(self, dt)
     def update_nodes(self, dt)
