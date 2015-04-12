@@ -364,6 +364,13 @@ class NavigationGraph():
         self.node_set_dirty = False
         self.node_selected_dirty = False
 
+    def block_node(self, node):
+        node.add_occupant(True)
+        self.pathfinder.notify_node_change(node)
+
+    def unblock_node(self, node):
+        node.remove_occupant(remove_all=True)
+
     def update_nodes(self, dt):
         for node in self.graph.nodes():
             node.update(dt)

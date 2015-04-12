@@ -32,6 +32,8 @@ class Pathfinder(pyglet.event.EventDispatcher):
         return self.path
 
     def get_edge_cost(self, from_node, to_node):
+        if to_node.has_occupants():
+            return config.world.blocked_node_edge_cost
         max_slope = 2   # 60 degrees
         min_slope = -2  # -60 degrees
         slope_width = abs(max_slope - min_slope)
@@ -46,6 +48,18 @@ class Pathfinder(pyglet.event.EventDispatcher):
         dist_cost = distance
         alt_cost = alt_contribution / slope_width * distance
         return dist_cost * distance_coefficient + altitude_wgt_coefficient * alt_cost
+
+    def notify_node_change(self, node):
+        if node.has_occupants() and node in self.path.get_node_list():
+            path_nodes = self.get_path_nodes()
+            previous_node = path_nodes[path_nodes.index(node)-1]
+            self.detour_from_node(previous_node)
+
+    def detour_from_node(self, node):
+        old_path = self.path.get_node_list()
+        to_detour_nodes = old_path[:old_path.index(node)]
+        self.set_start_node(node)  # Will update self.path
+        self.update_to_new_path(new_path=Path(to_detour_nodes + self.path.get_node_list()))
 
     def set_start_node(self, node):
         if self.destination_node == node:
@@ -70,8 +84,8 @@ class Pathfinder(pyglet.event.EventDispatcher):
         if changed:
             self.update_to_new_path()
 
-    def update_to_new_path(self):
-        new_path = self.create_path()
+    def update_to_new_path(self, new_path=None):
+        new_path = self.create_path() if not new_path else new_path
         if not self.path or new_path != self.path:
             event_type = Pathfinder.get_event_type_on_path_update()
             # print("Custom event: {0} - {1}".format(event_type, [node.label for node in new_path.get_node_list()]))

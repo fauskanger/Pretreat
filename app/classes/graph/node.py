@@ -40,6 +40,7 @@ class Node:
                                             group=pyglet.graphics.OrderedGroup(-100000))
         self.altitude = altitude
         self.content = content
+        self.occupants = []
         self.batch_group = pyglet.graphics.OrderedGroup(config.world.node_order_index)
         self.circle = shapelib.OutlinedCircle((x, y), self.current_radius, self.current_color, z=self.z, dz=1)
         self.path_circle = None
@@ -47,6 +48,21 @@ class Node:
         self.state = self.State.Default
         self._is_path_node = False
         self._is_selected = is_selected
+
+    def add_occupant(self, occupant):
+        if occupant not in self.occupants:
+            self.occupants.append(occupant)
+            return True
+        return False
+
+    def remove_occupant(self, occupant, remove_all=False):
+        if remove_all:
+            self.occupants.clear()
+            return True
+        return lib.try_remove(self.occupants, occupant)
+
+    def has_occupants(self):
+        return len(self.occupants) > 0
 
     def get_distance_to(self, node):
         return lib.get_point_distance(self.get_position(), node.get_position())

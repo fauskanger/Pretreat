@@ -100,6 +100,7 @@ class Configurations():
             self.adjust_edge_to_selection = True
 
             self.default_rand_seed = 13
+            self.blocked_node_edge_cost = float("inf")
             self.edge_refresh_interval = 1/30
             self.z_indexes = self.ZIndexes()
 
