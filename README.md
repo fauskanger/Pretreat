@@ -40,64 +40,123 @@ and IDE-functionality like "Go to declaration" is another.
 
 ### Central Components
 
-Below, the NavigationGraph class is briefly described. It's a wrapper around 
-NetworkX' [DiGraph](http://networkx.github.io/documentation/networkx-1.9.1/tutorial/tutorial.html#directed-graphs) 
-class, and offers a convenient interface to common interactions with the graph.
-
+#### NavigationGraph
 ```python
+import networkx as nx
+
 
 class NavigationGraph():
     def __init__(self):
         self.graph = nx.DiGraph()
+        self.pathfinder = AStarPathfinder(self.graph, self.altitude_function)
+        self.pathfinder.push_handlers(self)
+        # ...  
+          
+    def on_path_update(self, path):
         # ...
+```
 
-    def get_altitude(self, position)
-    def altitude_function(self, from_node, to_node)
+The NavigationGraph class is a wrapper around 
+NetworkX' [DiGraph](http://networkx.github.io/documentation/networkx-1.9.1/tutorial/tutorial.html#directed-graphs) 
+class, and offers a convenient interface to common graph interactions. It calls `draw()` on all graph 
+objects, and also ties together a pathfinder to its graph. An `on_path_update`-event is dispatched when the pathfinder
+has updated its path.
+
+```python
+
     def create_node(self, position)
     def on_path_update(self, path)
-    def get_selected_nodes(self)
-    def is_valid_node_position(self, position, node_exceptions=None)
-    def get_node_from_position(self, position)
+    
+    def add_node(self, node)
+    def remove_node(self, node)
+    def set_node_position(self, node, new_position)
+    def move_node(self, node, dx, dy)
+```
+
+Basic node operations. The `create_node` factory inserts the correct altitude into the node object at the position.
+
+```python
+    
     def _set_node_state(self, node, state)
     def set_node_state(self, node, state)
-    def set_node_to_default(self, node)
+    
+    def set_node_to_default(self, node)    
     def set_start_node(self, node)
     def set_destination_node(self, node)
-    def create_edge_from_selected_to(self, node)
-    def create_edge_to_selected_from(self, node)
-    def update_node_edges(self, node)
+    
+    def start_pathfinding(self)
+    def refresh_path_radius(self)
+```
+
+Manage pathfinding. `_set_node_state` is used internally in the latter methods.
+
+```python
+    
     def toggle_select(self, node, compare=None)
     def select_node(self, node)
     def deselect_node(self, node)
     def select_node_at_position(self, position)
     def deselect_node_at_position(self, position)
     def deselect_all_nodes(self)
-    def add_node(self, node)
-    def set_node_position(self, node, new_position)
-    def move_node(self, node, dx, dy)
-    def remove_node(self, node)
-    def add_edge(self, from_node, to_node)
+    def get_selected_nodes(self)
+```
+
+Control selection of nodes.
+
+```python
+    
+    def add_edge(self, from_node, to_node)    
     def remove_edge(self, from_node, to_node)
+    
+    def create_edge_from_selected_to(self, node)
+    def create_edge_to_selected_from(self, node)
+    
     def remove_edges_from_many(self, to_node, from_nodes)
     def remove_edges_to_many(self, from_node, to_nodes)
+    
     def remove_all_node_edges(self, node)
+    
+    def get_edge_object(self, edge)
+    def update_node_edges(self, node)
     def redraw_edges(self, node)
     def redraw_all_edges(self)
-    def get_edge_object(self, edge)
-    def update_node_labels(self)
+
+```
+    
+Edge management.
+
+```python
+
+    def get_altitude(self, position)
+    def altitude_function(self, from_node, to_node)
+```
+
+A height-map imported from file determines the terrain's altitude at a given position. This is used by pathfinder to
+consider path slopes. 
+
+```python
+    
+    def get_node_from_position(self, position)
+    def is_valid_node_position(self, position, node_exceptions=None)
+    def find_nearest_nodes(self, node, number_of_hits=1, candidates=None, exceptions=())
+    def generate_grid_with_margin(self, rows, cols, margin, width, height)
+    def generate_grid(self, row_count, col_count, max_width, max_height, start_pos=(0, 0), make_hex=True)
+```
+
+Some helper methods.    
+
+```python
+
     def draw(self)
     def update(self, dt)
     def update_nodes(self, dt)
     def update_edges(self, dt)
     def update_path(self, dt)
-    def start_pathfinding(self)
-    def refresh_path_radius(self)
-    def find_nearest_nodes(self, node, number_of_hits=1, candidates=None, exceptions=())
+    def update_node_labels(self)
     def clear(self)
-    def generate_grid_with_margin(self, rows, cols, margin, width, height)
-    def generate_grid(self, row_count, col_count, max_width, max_height, start_pos=(0, 0), make_hex=True)
-
 ```
+Render and update.
+
 
 ## How to use
   1. Start application with run.py
