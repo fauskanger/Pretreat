@@ -223,12 +223,10 @@ class AStarPathfinder(Pathfinder):
         nodes = []
         if self.start_node and self.destination_node:
             try:
-                # print("Running NetworkX' A* algorithm.")
                 nodes = nx.astar_path(self.graph, self.start_node, self.destination_node,
                                       heuristic=self.heuristic_function,
                                       weight=config.strings.weight)
             except nx.NetworkXNoPath:
-                # print("No path from node {0} to node {1}".format(self.start_node.label, self.destination_node.label))
                 pass
         path = Path(nodes)
         return path

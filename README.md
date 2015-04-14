@@ -333,7 +333,7 @@ class AStarPathfinder(Pathfinder):
             try:
                 nodes = nx.astar_path(self.graph, self.start_node, self.destination_node, self.heuristic_function)
             except nx.NetworkXNoPath:
-            nodes = []  # No path found.
+                nodes = []  # No path found.
         return Path(nodes)
 ```
 A simple implementation of
