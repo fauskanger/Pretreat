@@ -8,6 +8,16 @@ A graph editor for examining pathfinding algorithms that take tactical retreat /
 I.e. an agent might be instructed to retreat or back up from a node during a walk along an a priori optimal path. 
 This application is meant to provide the basic tools to illustrate and test such algorithms.
 
+### Näive example
+
+![Näive example](app/resources/readme/naive_example.png "Logo Title Text 1")
+  - Start node: 17
+  - Destination node: 20
+  - Node 19 was blocked after previously decided the preceding node being node 8, 
+  so it has to detour to node 10, which in hindsight could've been visited after node 11. The indicated path
+  is the shortest path between start and destination via node 8.
+
+
   
   
 
@@ -272,7 +282,6 @@ a static method `get_event_type_on_path_update` to obtain the corresponding stri
 ```
 The edge cost, e.g. simply the distance. Derived classes overrides to implement their own cost functions.
 ```
-
     def set_start_node(self, node)
     def set_destination_node(self, node)
     def clear_node(self, node)
@@ -388,6 +397,8 @@ The CustomPathfinder is the base iterable pathfinder.
 ```
 The `tick` is called for each step, managed by the overridden `_update`. `create_path` is mentioned above.
 
+  
+  
   
   
 
