@@ -14,9 +14,11 @@ This application is meant to provide the basic tools to illustrate and test such
   - Start node: 17
   - Destination node: 20
   - Blocked nodes in red: 19 and 16
-  - Node 19 was blocked after previously decided the preceding node being node 8, 
-  so it has to detour to node 10, which in hindsight could've been visited after node 11. The indicated path
-  is the shortest path between start and destination via node 8.
+  - Before blocked, node 19 was in the optimal path.
+
+When blocked, the preceding node is node 8. From there, it has to detour in order to reach the destination. 
+The updated optimal path is going to node 10, which in hindsight would've been visited directly from node 11. 
+The indicated path is the shortest path between start and destination via node 8.
 
 
   
