@@ -291,13 +291,23 @@ Start pathfinder and retrieve information.
     def create_path(self)
 ```
 Calling `update_to_new_path` will refresh pathfinder. Within, the `create_path` is called
- to construct the path, i.e. this is where the derived classes present their pathfinding implementation. 
+ to construct the path, i.e. this is where the derived classes present their pathfinding implementation. Also,
+ it's using `assemble_waypoint_paths` to include waypoints, which is described below.
 ```
     def notify_node_change(self, node)
-    def detour_from_node(self, node)
+    def split_path_on_waypoint(self, node)
+    
+    def add_waypoint(self, node, index=None)
+    def remove_waypoint(self, node)
+    def waypoint_index(self, node)
+    def assemble_waypoint_paths(self)
 ```
 The NavigationGraph will `notify_node_change` when the node's occupant-list is changed. When a node is blocked,
-the pathfinder will with its predecessor call `detour_from_node`.
+the pathfinder will call `split_path_on_waypoint` with blocked node's predecessor.
+
+Adding waypoints in essence creates multiple, consecutive paths between them, that are retrieved as a
+flattened list of nodes from `assemble_waypoints`. Tbe `create_path`-method mentioned above is used to find the path 
+between each waypoint.
 ```
     def update(self, dt)
     def _update(self, dt)

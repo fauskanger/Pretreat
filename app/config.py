@@ -20,7 +20,7 @@ class Configurations():
             self.error_prefix = ' >>> '
 
             self.pos = 'pos'
-            self.wgt = 'weight'
+            self.weight = 'weight'
             self.label = 'label'
             self.altitude = 'altitude'
 
@@ -80,6 +80,7 @@ class Configurations():
             self.edge_in_node_color = colors.gray_66
             self.edge_triangle_color = self.node_color
             self.selected_node_color = colors.extra.orange_red
+            self.node_occupied_color = colors.red
 
             self.path_edge_color = colors.extra.crimson
             self.path_node_color = self.path_edge_color
@@ -102,6 +103,7 @@ class Configurations():
             self.default_rand_seed = 13
             self.blocked_node_edge_cost = float("inf")
             self.edge_refresh_interval = 1/30
+            self.pathfinder_refresh_interval = 1/2
             self.z_indexes = self.ZIndexes()
 
     def __init__(self):

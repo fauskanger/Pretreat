@@ -55,6 +55,7 @@ class NavigationGraph():
             node.set_as_path_node(is_path_node=is_path_node)
 
         self.redraw_all_edges()
+        self.refresh_all_nodes()
 
     def get_selected_nodes(self):
         return [node for node in self.graph.nodes() if node.is_selected()]
@@ -130,7 +131,8 @@ class NavigationGraph():
             def update_edge_weight(from_node, to_node):
                 if self.graph.has_edge(from_node, to_node):
                     cost = self.pathfinder.get_edge_cost(from_node, to_node)
-                    self.graph[from_node][to_node][config.strings.wgt] = cost
+                    # Default weight-attribute in NetworkX, used by e.g. AStarPathfinder
+                    self.graph[from_node][to_node][config.strings.weight] = cost
 
             def update_edge_shape(from_node, to_node):
                 edge = self.get_edge_object((from_node, to_node))
@@ -185,8 +187,7 @@ class NavigationGraph():
 
     def deselect_all_nodes(self):
         for node in self.get_selected_nodes():
-            removed = self.deselect_node(node)
-            # print("Remove selection from node: {0}".format(removed))
+            self.deselect_node(node)
 
     def add_node(self, node):
         if node is None or not self.is_valid_node_position(node.get_position()):
@@ -218,6 +219,15 @@ class NavigationGraph():
     def redraw_all_edges(self):
         for node in self.graph.nodes():
             self.update_edge_on_next.append(node)
+
+    def refresh_all_nodes(self):
+        for node in self.graph.nodes():
+            if node is self.pathfinder.start_node:
+                node.set_state(Node.State.Start)
+            elif node is self.pathfinder.destination_node:
+                node.set_state(Node.State.Destination)
+            else:
+                node.set_state(Node.State.Default)
 
     def set_node_position(self, node, new_position):
         dx, dy = lib.subtract_points(new_position, node.get_position())
@@ -365,11 +375,17 @@ class NavigationGraph():
         self.node_selected_dirty = False
 
     def block_node(self, node):
-        node.add_occupant(True)
-        self.pathfinder.notify_node_change(node)
+        if node.state is Node.State.Default:
+            node.add_occupant(True)
+            self.node_set_dirty = True
+            self.update_node_edges(node)
+            self.pathfinder.notify_node_change(node)
 
     def unblock_node(self, node):
-        node.remove_occupant(remove_all=True)
+        node.remove_all_occupants()
+        self.node_set_dirty = True
+        self.update_node_edges(node)
+        self.pathfinder.notify_node_change(node)
 
     def update_nodes(self, dt):
         for node in self.graph.nodes():
@@ -386,9 +402,8 @@ class NavigationGraph():
         must_reevaluate_path = self.node_positions_dirty or self.node_set_dirty
         # must_refresh_path = self.node_selected_dirty
         if self.pathfinder and must_reevaluate_path:
-            self.pathfinder.update_to_new_path()
-        else:
-            self.pathfinder.update(dt)
+            self.pathfinder.refresh_path()
+        self.pathfinder.update(dt)
 
     def start_pathfinding(self):
         self.pathfinder.start()

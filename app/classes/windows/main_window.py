@@ -203,7 +203,7 @@ class MainWindow(BaseWindow):
             self.next_node_click_state = None
 
     def on_key_press(self, symbol, modifiers):
-        if symbol == key.B:
+        if symbol == key.A:
             self.draw_background = not self.draw_background
         if symbol == key.SPACE:
             self.nav_graph.start_pathfinding()
@@ -212,6 +212,12 @@ class MainWindow(BaseWindow):
         if symbol == key.S or symbol == key.D:
             self.set_path_end_on_click = True
             self.next_node_click_state = None
+        if symbol == key.B:
+            for node in self.nav_graph.get_selected_nodes():
+                if node.has_occupants():
+                    self.nav_graph.unblock_node(node)
+                else:
+                    self.nav_graph.block_node(node)
 
     def on_resize(self, width, height):
         self.background_image.width = width

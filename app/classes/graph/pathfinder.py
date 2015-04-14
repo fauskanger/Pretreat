@@ -6,6 +6,7 @@ import pyglet
 from app.pythomas import pythomas as lib
 from app.config import config, global_string_values as strings
 from app.classes.graph.path import Path
+from app.classes.graph.node import Node
 
 
 class Pathfinder(pyglet.event.EventDispatcher):
@@ -22,9 +23,12 @@ class Pathfinder(pyglet.event.EventDispatcher):
             self.path = Path(None)
         self.register_event_type(Pathfinder.get_event_type_on_path_update())
         self.altitude_function = altitude_function
+        self.refresh_timer = 0
+        self._refresh_path = False
+        self.waypoints = []
 
     def start(self):
-        self.update_to_new_path()
+        self.refresh_path()
 
     def get_path(self):
         if self.path is None:
@@ -42,7 +46,7 @@ class Pathfinder(pyglet.event.EventDispatcher):
         distance = lib.get_point_distance(from_node.get_position(), to_node.get_position())
         alt_raise = 0 if not self.altitude_function else self.altitude_function(from_node, to_node)
         slope = alt_raise/distance
-        alt_contribution = 0
+        alt_contribution = float("inf")  # Float representation of infinity
         if min_slope < slope < max_slope:
             alt_contribution = slope - min_slope
         dist_cost = distance
@@ -50,30 +54,28 @@ class Pathfinder(pyglet.event.EventDispatcher):
         return dist_cost * distance_coefficient + altitude_wgt_coefficient * alt_cost
 
     def notify_node_change(self, node):
-        if node.has_occupants() and node in self.path.get_node_list():
-            path_nodes = self.get_path_nodes()
-            previous_node = path_nodes[path_nodes.index(node)-1]
-            self.detour_from_node(previous_node)
-
-    def detour_from_node(self, node):
-        old_path = self.path.get_node_list()
-        to_detour_nodes = old_path[:old_path.index(node)]
-        self.set_start_node(node)  # Will update self.path
-        self.update_to_new_path(new_path=Path(to_detour_nodes + self.path.get_node_list()))
+        path_nodes = self.get_path_nodes()
+        if node.has_occupants():
+            if node in path_nodes:
+                index = path_nodes.index(node)
+                previous_node = path_nodes[index-1] if index > 0 else None
+                self.split_path_on_waypoint(previous_node)
 
     def set_start_node(self, node):
         if self.destination_node == node:
             self.destination_node = None
         self.start_node = node
-        self.update_to_new_path()
+        self.refresh_path()
 
     def set_destination_node(self, node):
         if self.start_node == node:
             self.start_node = None
         self.destination_node = node
-        self.update_to_new_path()
+        self.refresh_path()
 
-    def clear_node(self, node):
+    def clear_node(self, node, ignore_refresh=False):
+        if not node:
+            return
         changed = False
         if self.start_node == node:
             self.start_node = None
@@ -81,27 +83,108 @@ class Pathfinder(pyglet.event.EventDispatcher):
         if self.destination_node == node:
             self.destination_node = None
             changed = True
-        if changed:
-            self.update_to_new_path()
+        if changed or node in self.path.get_node_list():
+            # self.path.remove_node(node)
+            changed = True
+        if changed and not ignore_refresh:
+            self.refresh_path()
 
-    def update_to_new_path(self, new_path=None):
-        new_path = self.create_path() if not new_path else new_path
-        if not self.path or new_path != self.path:
+    def add_waypoint(self, node, index=None):
+        if node is not self.start_node and node is not self.destination_node:
+            if index and index < len(self.waypoints):
+                self.waypoints.insert(index, node)
+            else:
+                self.waypoints.append(node)
+        self.refresh_path()
+
+    def remove_waypoint(self, node):
+        lib.try_remove(self.waypoints, node)
+
+    def waypoint_index(self, node):
+        path_nodes = self.path.get_node_list()
+        node_path_index = path_nodes.index(node)
+        last_index = len(self.waypoints)
+        if node not in path_nodes:
+            return last_index
+        try:
+            return self.waypoints.index(node)
+        except ValueError:
+            pass
+        for waypoint in self.waypoints:
+            if path_nodes.index(waypoint) > node_path_index:
+                return self.waypoints.index(waypoint)
+        return last_index
+
+    def _set_path(self, new_path):
+        self.path = new_path
+        if new_path is None:
+            # self.start_node = None
+            # self.destination_node = None
+            return
+        new_nodes = new_path.get_node_list()
+        if len(new_nodes) > 1:
+            self.start_node = new_nodes[0]
+            self.destination_node = new_nodes[-1]
+        elif len(new_nodes) == 1:
+            self.start_node = self.destination_node = new_nodes[0]
+        # else:
+        #     self.start_node = None
+        #     self.destination_node = None
+
+    def refresh_path(self):
+        self._refresh_path = True
+
+    def update_to_new_path(self):
+        new_path = self.assemble_waypoint_paths()
+        if not self.path or new_path.get_node_list() != self.path.get_node_list():
             event_type = Pathfinder.get_event_type_on_path_update()
-            # print("Custom event: {0} - {1}".format(event_type, [node.label for node in new_path.get_node_list()]))
-            self.path = new_path
+            self._set_path(new_path)
             self.dispatch_event(event_type, self.path)
+
+    def assemble_waypoint_paths(self):
+        if not self.start_node or not self.destination_node:
+            return None
+        start = self.start_node
+        destination = self.destination_node
+        paths = []
+        nodes = [self.start_node]
+        nodes.extend(self.waypoints)
+        nodes.append(self.destination_node)
+        for i in range(1, len(nodes)):
+            self.start_node = nodes[i-1]
+            self.destination_node = nodes[i]
+            paths.append(self.create_path())
+        result_nodes = [paths[0].first()]
+        for path in paths:
+            result_nodes.extend(path.get_node_list()[1:])
+        assembled_path = Path(result_nodes)
+        self.start_node = start
+        self.destination_node = destination
+        return assembled_path
+
+    def split_path_on_waypoint(self, node):
+        if node is None:
+            return
+        if node not in self.waypoints and self.path.has_node(node):
+            self.add_waypoint(node, index=self.waypoint_index(node))
 
     def create_path(self):
         return None
 
     def update(self, dt):
+        self.refresh_timer += dt
+
+        if self._refresh_path and self.refresh_timer > config.world.pathfinder_refresh_interval:
+            self.update_to_new_path()
+            self._refresh_path = False
+            self.refresh_timer = 0
+
         start_color = config.world.start_node_color
         destination_color = config.world.destination_node_color
         if self.start_node and self.start_node.get_color() != start_color:
-            self.start_node.set_color()
+            self.start_node.set_color(start_color)
         if self.destination_node and self.destination_node.get_color() != destination_color:
-            self.destination_node.set_color(config.world.destination_node_color)
+            self.destination_node.set_color(destination_color)
         if self.path:
             self.path.update(dt)
         self._update(dt)
@@ -141,7 +224,9 @@ class AStarPathfinder(Pathfinder):
         if self.start_node and self.destination_node:
             try:
                 # print("Running NetworkX' A* algorithm.")
-                nodes = nx.astar_path(self.graph, self.start_node, self.destination_node, self.heuristic_function)
+                nodes = nx.astar_path(self.graph, self.start_node, self.destination_node,
+                                      heuristic=self.heuristic_function,
+                                      weight=config.strings.weight)
             except nx.NetworkXNoPath:
                 # print("No path from node {0} to node {1}".format(self.start_node.label, self.destination_node.label))
                 pass

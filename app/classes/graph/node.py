@@ -55,10 +55,10 @@ class Node:
             return True
         return False
 
-    def remove_occupant(self, occupant, remove_all=False):
-        if remove_all:
-            self.occupants.clear()
-            return True
+    def remove_all_occupants(self):
+        self.occupants.clear()
+
+    def remove_occupant(self, occupant):
         return lib.try_remove(self.occupants, occupant)
 
     def has_occupants(self):
@@ -133,8 +133,7 @@ class Node:
         self.circle.set_radius(self.current_radius)
 
     def set_state(self, state):
-        print("Setting new state: {0}".format(state))
-        self.set_color(Node.get_state_color(state))
+        # print("Setting new state: {0}".format(state))
         self.state = state
 
     def move(self, dx, dy):
@@ -216,6 +215,9 @@ class Node:
             self.path_circle.delete()
 
     def update(self, dt):
+        self.set_color(Node.get_state_color(self.state))
         self.update_path_indicator()
         self.update_selected_indicator()
+        if self.has_occupants():
+            self.set_color(config.world.node_occupied_color)
 
