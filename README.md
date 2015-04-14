@@ -8,9 +8,9 @@ A graph editor for examining pathfinding algorithms that take tactical retreat /
 I.e. an agent might be instructed to retreat or back up from a node during a walk along an a priori optimal path. 
 This application is meant to provide the basic tools to illustrate and test such algorithms.
 
-### Näive example
+### Naïve example
 
-![Näive example](app/resources/readme/naive_example.png "Logo Title Text 1")
+![Naïve example](app/resources/readme/naive_example.png "Logo Title Text 1")
   - Start node: 17
   - Destination node: 20
   - Node 19 was blocked after previously decided the preceding node being node 8, 
