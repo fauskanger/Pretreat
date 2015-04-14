@@ -38,7 +38,7 @@ class Path:
         pass
 
     def delete(self):
-        pass
+        self.nodes.clear()
 
     def get_edge_list(self):
         nodes = self.get_node_list()

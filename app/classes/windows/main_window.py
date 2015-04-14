@@ -218,6 +218,19 @@ class MainWindow(BaseWindow):
                     self.nav_graph.unblock_node(node)
                 else:
                     self.nav_graph.block_node(node)
+        if symbol == key.C:
+            path_edges = self.nav_graph.pathfinder.get_path_edges()
+            self.nav_graph.pathfinder.waypoints.clear()
+            self.nav_graph.set_node_to_default(self.nav_graph.pathfinder.start_node)
+            self.nav_graph.set_node_to_default(self.nav_graph.pathfinder.destination_node)
+            for u, v in path_edges:
+                edge = self.nav_graph.get_edge_object((u, v))
+                edge.set_as_path_edge(is_path_edge=False)
+            self.nav_graph.pathfinder.update_to_new_path()
+            self.nav_graph.refresh_path_components()
+        if symbol == key.W:
+            self.nav_graph.pathfinder.waypoints.clear()
+            self.nav_graph.pathfinder.refresh_path()
 
     def on_resize(self, width, height):
         self.background_image.width = width

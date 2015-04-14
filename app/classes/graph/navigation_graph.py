@@ -44,18 +44,29 @@ class NavigationGraph():
 
     def on_path_update(self, path):
         # print("Path updated. {0}".format([node.label for node in path.get_node_list()]))
-        path_edge_tuples = [] if not path else path.get_edge_list()
+        self.refresh_path_components()
+
+    def refresh_path_components(self):
+        self.set_path_components()
+        self.redraw_all_edges()
+        self.refresh_all_nodes()
+
+    def set_path_components(self):
+        self.set_path_edges()
+        self.set_path_nodes()
+
+    def set_path_edges(self):
+        path_edge_tuples = self.pathfinder.get_path_edges()
         for edge_tuple in self.graph.edges():
                 edge = self.get_edge_object(edge_tuple)
                 is_path_edge = edge_tuple in path_edge_tuples
                 edge.set_as_path_edge(is_path_edge=is_path_edge)
-        path_nodes = [] if not path else path.get_node_list()
+
+    def set_path_nodes(self):
+        path_nodes = self.pathfinder.get_path_nodes()
         for node in self.graph.nodes():
             is_path_node = node in path_nodes
             node.set_as_path_node(is_path_node=is_path_node)
-
-        self.redraw_all_edges()
-        self.refresh_all_nodes()
 
     def get_selected_nodes(self):
         return [node for node in self.graph.nodes() if node.is_selected()]
@@ -291,7 +302,7 @@ class NavigationGraph():
     def remove_all_node_edges(self, node):
         for u, v in self.graph.edges():
             if u is node or v is node:
-                self.graph.remove_edge(u, v)
+                self.remove_edge(u, v)
 
     def get_edge_object(self, edge):
         # Works with both (u, v)-tuples and edges from nx.G.edges()
@@ -396,6 +407,7 @@ class NavigationGraph():
         if self.edge_update_timer > config.world.edge_refresh_interval:
             for node in self.update_edge_on_next:
                 self.update_node_edges(node)
+            self.edge_update_timer = 0
             self.update_edge_on_next.clear()
 
     def update_path(self, dt):

@@ -58,6 +58,8 @@ When one or more nodes are selected:
 ### Pathfinding
 | Event         | Input         | Alternative |
 | :------------- |:-------------|:----|
+| Remove Path | C|  |
+| Remove Waypoints | W|  |
 | Set Start\* | S + LMB| S, then LMB |
 | Set Destination\* | D + LMB| D, then LMB |
 | Complete Search\*\*      | Space |

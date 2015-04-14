@@ -103,7 +103,7 @@ class Configurations():
             self.default_rand_seed = 13
             self.blocked_node_edge_cost = float("inf")
             self.edge_refresh_interval = 1/30
-            self.pathfinder_refresh_interval = 1/2
+            self.pathfinder_refresh_interval = 1/30
             self.z_indexes = self.ZIndexes()
 
     def __init__(self):

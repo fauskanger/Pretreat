@@ -76,29 +76,32 @@ class Pathfinder(pyglet.event.EventDispatcher):
     def clear_node(self, node, ignore_refresh=False):
         if not node:
             return
-        changed = False
+        changed = self.remove_waypoint(node)
         if self.start_node == node:
             self.start_node = None
             changed = True
         if self.destination_node == node:
             self.destination_node = None
             changed = True
-        if changed or node in self.path.get_node_list():
-            # self.path.remove_node(node)
+        if self.path and self.path.has_node(node):
+            self.path.delete()  # Clears node list in path
             changed = True
         if changed and not ignore_refresh:
             self.refresh_path()
 
     def add_waypoint(self, node, index=None):
+        added = False
         if node is not self.start_node and node is not self.destination_node:
             if index and index < len(self.waypoints):
                 self.waypoints.insert(index, node)
             else:
                 self.waypoints.append(node)
+            added = True
         self.refresh_path()
+        return added
 
     def remove_waypoint(self, node):
-        lib.try_remove(self.waypoints, node)
+        return lib.try_remove(self.waypoints, node)
 
     def waypoint_index(self, node):
         path_nodes = self.path.get_node_list()
@@ -136,7 +139,7 @@ class Pathfinder(pyglet.event.EventDispatcher):
 
     def update_to_new_path(self):
         new_path = self.assemble_waypoint_paths()
-        if not self.path or new_path.get_node_list() != self.path.get_node_list():
+        if not self.path or new_path and new_path.get_node_list() != self.path.get_node_list():
             event_type = Pathfinder.get_event_type_on_path_update()
             self._set_path(new_path)
             self.dispatch_event(event_type, self.path)
