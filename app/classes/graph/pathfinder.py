@@ -35,7 +35,18 @@ class Pathfinder(pyglet.event.EventDispatcher):
             self.update_to_new_path()
         return self.path
 
-    def get_edge_cost(self, from_node, to_node):
+    def get_path_cost(self, path=None):
+        path = self.path if not path else path
+        if not path:
+            return None
+        edges = path.get_edge_list()
+        return sum([self.read_edge_cost(edge) for edge in edges])
+
+    def read_edge_cost(self, edge):
+        u, v = edge[0], edge[1]
+        return self.graph[u][v][config.strings.weight]
+
+    def calculate_edge_cost(self, from_node, to_node):
         if to_node.has_occupants():
             return config.world.blocked_node_edge_cost
         max_slope = 2   # 60 degrees
@@ -60,6 +71,7 @@ class Pathfinder(pyglet.event.EventDispatcher):
                 index = path_nodes.index(node)
                 previous_node = path_nodes[index-1] if index > 0 else None
                 self.split_path_on_waypoint(previous_node)
+                self.update_to_new_path()
 
     def set_start_node(self, node):
         if self.destination_node == node:

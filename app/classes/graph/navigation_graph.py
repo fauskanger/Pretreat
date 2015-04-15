@@ -141,7 +141,7 @@ class NavigationGraph():
         for neighbor_node in nx.all_neighbors(self.graph, node):
             def update_edge_weight(from_node, to_node):
                 if self.graph.has_edge(from_node, to_node):
-                    cost = self.pathfinder.get_edge_cost(from_node, to_node)
+                    cost = self.pathfinder.calculate_edge_cost(from_node, to_node)
                     # Default weight-attribute in NetworkX, used by e.g. AStarPathfinder
                     self.graph[from_node][to_node][config.strings.weight] = cost
 
@@ -268,7 +268,7 @@ class NavigationGraph():
             return False
         if self.graph.has_edge(from_node, to_node):
             return False
-        weight = self.pathfinder.get_edge_cost(from_node, to_node)
+        weight = self.pathfinder.calculate_edge_cost(from_node, to_node)
         try:
             self.graph.add_edge(from_node, to_node, weight=weight, object=Edge(from_node, to_node))
         except nx.NetworkXError:
@@ -386,17 +386,18 @@ class NavigationGraph():
         self.node_selected_dirty = False
 
     def block_node(self, node):
-        if node.state is Node.State.Default:
+        if not node.has_occupants() and node.state is Node.State.Default:
             node.add_occupant(True)
             self.node_set_dirty = True
             self.update_node_edges(node)
             self.pathfinder.notify_node_change(node)
 
     def unblock_node(self, node):
-        node.remove_all_occupants()
-        self.node_set_dirty = True
-        self.update_node_edges(node)
-        self.pathfinder.notify_node_change(node)
+        if node.has_occupants():
+            node.remove_all_occupants()
+            self.node_set_dirty = True
+            self.update_node_edges(node)
+            self.pathfinder.notify_node_change(node)
 
     def update_nodes(self, dt):
         for node in self.graph.nodes():

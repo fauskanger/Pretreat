@@ -7,6 +7,7 @@ from app.pythomas.pythomas import PygletLib as Plib
 from app.classes.windows.base_window import BaseWindow
 from app.classes.graph.agent import SuperAgent
 from app.classes.graph.navigation_graph import NavigationGraph, Node
+from app.classes.graph.analyzer import Analyzer
 
 
 class MainWindow(BaseWindow):
@@ -14,8 +15,9 @@ class MainWindow(BaseWindow):
         super(MainWindow, self).__init__("Main window", outer_handler)
         # self.push_handlers()
         self.nav_graph = NavigationGraph()
-        self.altitude_image = pyglet.resource.image(lib.resource(config.strings.altitude_map))
+        self.analyzer = Analyzer(self.nav_graph)
 
+        self.altitude_image = self.nav_graph.altitude_image
         self.background_image = self.altitude_image
 
         self.agent = SuperAgent()
@@ -63,6 +65,15 @@ class MainWindow(BaseWindow):
                 self.nav_graph.set_start_node(node)
             if destination_label and node.label == destination_label:
                 self.nav_graph.set_destination_node(node)
+
+    def analyze_path(self):
+        expected_cost, base_cost, irreplaceables = self.analyzer.score_path()
+        ratio = expected_cost/base_cost
+        print("Initial cost, before blocking: {0}".format(base_cost))
+        print("Expected cost, where possible: {0}".format(expected_cost))
+        print("  => Ratio = {0} ({2}{1}%)".format(ratio, (ratio-1)*100, "-" if ratio < 1 else "+"))
+        print("Irreplaceable nodes ({1}): {0}".
+              format([node.label for node in irreplaceables], len(irreplaceables)))
 
     def on_mouse_motion(self, x, y, dx, dy):
         # cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)
@@ -212,6 +223,8 @@ class MainWindow(BaseWindow):
         if symbol == key.S or symbol == key.D:
             self.set_path_end_on_click = True
             self.next_node_click_state = None
+        if symbol == key.E:
+            self.analyze_path()
         if symbol == key.B:
             for node in self.nav_graph.get_selected_nodes():
                 if node.has_occupants():
