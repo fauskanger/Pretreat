@@ -11,12 +11,17 @@ from app.classes.graph.pathfinder import CustomPathfinder
 
 
 class PretreatPathfinder(CustomPathfinder):
-    def __init__(self, graph):
+    def __init__(self, graph, heuristic=None):
         super().__init__(graph, "Pretreat Pathfinder")
         self.evaluated_nodes = []
         self.to_visit = []
+        self.heuristic = heuristic if heuristic else self.default_heuristic
         if False:
             self.graph = nx.DiGraph()
+
+    def default_heuristic(self, node_u, node_v):
+        # A* with 0-heuristic is the same as Dijkstra's
+        return 0
 
     def tick(self):
         print("Tick the pathfinder")
