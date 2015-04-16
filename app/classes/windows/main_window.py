@@ -68,10 +68,11 @@ class MainWindow(BaseWindow):
 
     def analyze_path(self):
         expected_cost, base_cost, irreplaceables = self.analyzer.score_path()
-        ratio = expected_cost/base_cost
+        ratio = round(expected_cost/base_cost, 3)
+        print("-" * 6)
         print("Initial cost, before blocking: {0}".format(base_cost))
         print("Expected cost, where possible: {0}".format(expected_cost))
-        print("  => Ratio = {0} ({2}{1}%)".format(ratio, (ratio-1)*100, "-" if ratio < 1 else "+"))
+        print("  => Ratio = {0} ({2}{1}%)".format(ratio, (ratio-1)*100, " " if ratio < 1 else "+"))
         print("Irreplaceable nodes ({1}): {0}".
               format([node.label for node in irreplaceables], len(irreplaceables)))
 

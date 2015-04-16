@@ -13,6 +13,9 @@ class Analyzer:
             return None
         edges = self.nav_graph.pathfinder.get_path_edges()
         base_cost = self.nav_graph.pathfinder.get_path_cost()
+        base_costs = dict()
+        for edge in edges:
+            base_costs[edge] = self.nav_graph.pathfinder.read_edge_cost(edge)
         infinity = float("inf")
         irreplaceable_nodes = []
         costs = dict()
@@ -25,7 +28,7 @@ class Analyzer:
             cost = None if not cost or cost == infinity else cost
             if not cost:
                 irreplaceable_nodes.append(node)
-            costs[node] = 0 if not cost else cost
+            costs[node] = base_cost if not cost else cost
             chances[node] = 1 / (len(nodes) - 2)
             self.nav_graph.unblock_node(node)
 
