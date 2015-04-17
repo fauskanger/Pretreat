@@ -1,4 +1,5 @@
 from app.pythomas.colors import colors
+import pyglet
 
 
 class Configurations():
@@ -8,9 +9,10 @@ class Configurations():
                 self.on_path_update = 'on_path_update'
 
         def __init__(self):
-            self.title = 'My Test Application'
+            self.title = 'Pretreat'
             self.resource_path = 'app/resources'
             self.sqlite3_filename = 'db/sqlite3_pretreat.db'
+            self.zodb_filename = 'zodb.fs'
             self.plot_save_filename = "weighted_graph.png"
             self.icon_folder = 'icons/map1'
             self.icons_paths = []  # Will be populated below
@@ -108,11 +110,14 @@ class Configurations():
 
     def __init__(self):
         # Whether or not to run test window instead
-        self.test = False
+        self.test = True
         self.strings = self.Strings()
+        self.settings_path = pyglet.resource.get_settings_path(self.strings.title)
         self.window = self.Window()
         self.world = self.World()
         self.colors = colors
+
+print("Config has been read")
 
 
 config = Configurations()
