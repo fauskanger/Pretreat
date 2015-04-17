@@ -85,8 +85,10 @@ When one or more nodes are selected:
   - Persistent Object Database: ZODB 4.1.0 [ [PyPi](https://pypi.python.org/pypi/ZODB#prerequisites) | [Home](http://www.zodb.org) | 
   [Programming Guide](http://www.zodb.org/en/latest/documentation/guide/prog-zodb.html) ]
   
-  ZODB requires a several prerequisites, and the rich [Wheels library](http://www.lfd.uci.edu/~gohlke/pythonlibs/)
-  made it possible to install on win7/8 too. The ones required for ZODB is added to the repository [here](wheels/ZODB).
+  ZODB requires a several prerequisites, and the wheels found at http://www.lfd.uci.edu/~gohlke/pythonlibs/
+  made easy to install on win7/8 too. The ones required for ZODB is added to the repository [here](wheels/ZODB).
+  It should be noted that [the mentioned wheels library](http://www.lfd.uci.edu/~gohlke/pythonlibs/) 
+  is a great source of Python libraries across platforms and versions. 
 
 ### Current/working Setup
   - Developed with 64-bit version of Python 3.4.2 (Kit: [Anaconda Python Package](https://store.continuum.io/cshop/anaconda/))
@@ -95,8 +97,6 @@ When one or more nodes are selected:
     - Setuptools
   - Tested on Windows 7 and 8
   - IDE used: JetBrain's PyCharm (Free Academic Licence) [ [Download here](https://www.jetbrains.com/pycharm/download/) ]
-
-(It seems that http://www.lfd.uci.edu/~gohlke/pythonlibs/ is a great source of Python libraries across platforms and versions.) 
 
 ### Comments on the code
 ```python
