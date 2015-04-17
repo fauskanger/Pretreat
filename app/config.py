@@ -110,7 +110,7 @@ class Configurations():
 
     def __init__(self):
         # Whether or not to run test window instead
-        self.test = True
+        self.test = False
         self.strings = self.Strings()
         self.settings_path = pyglet.resource.get_settings_path(self.strings.title)
         self.window = self.Window()

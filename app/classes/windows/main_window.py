@@ -67,14 +67,16 @@ class MainWindow(BaseWindow):
                 self.nav_graph.set_destination_node(node)
 
     def analyze_path(self):
-        expected_cost, base_cost, irreplaceables = self.analyzer.score_path()
-        ratio = round(expected_cost/base_cost, 3)
+        analysis = self.analyzer.score_path()
+        ratio = float("inf") if analysis.base_cost == 0 else round(analysis.expected_cost/analysis.base_cost, 3)
+        irreplaceables = analysis.irreplaceable_nodes
         print("-" * 6)
-        print("Initial cost, before blocking: {0}".format(base_cost))
-        print("Expected cost, where possible: {0}".format(expected_cost))
+        print("Initial cost, before blocking: {0}".format(analysis.base_cost))
+        print("Expected cost, where possible: {0}".format(analysis.expected_cost))
         print("  => Ratio = {0} ({2}{1}%)".format(ratio, (ratio-1)*100, " " if ratio < 1 else "+"))
         print("Irreplaceable nodes ({1}): {0}".
               format([node.label for node in irreplaceables], len(irreplaceables)))
+        print("Chance of path blocked: {0}".format(analysis.chance_of_closed()))
 
     def on_mouse_motion(self, x, y, dx, dy):
         # cursor = self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR)

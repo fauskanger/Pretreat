@@ -470,24 +470,24 @@ class NavigationGraph():
                     self.add_node(node)
                 odd = not odd
 
-        # w2 = col_step * col_step
-        # h2 = row_step * row_step
-        # if w2 < h2:
-        #     w2 /= 4
-        # else:
-        #     h2 /= 4
-        # max_near_distance = math.sqrt(w2 + h2) + 5
-        #
-        # random.shuffle(nodes)
-        #
-        # for node in nodes:
-        #     def is_near(candidate):
-        #         return NavigationGraph.get_node_distance(candidate, node) < max_near_distance
-        #     neighbors = [candidate for candidate in nodes if is_near(candidate)]
-        #     for neighbor in neighbors:
-        #         if self.graph.degree(neighbor) < 8:
-        #             val = random.random()*100
-        #             if val > 50:
-        #                 self.add_edge(neighbor, node)
-        #             elif val > 10:
-        #                 self.add_edge(node, neighbor)
+        w2 = col_step * col_step
+        h2 = row_step * row_step
+        if w2 < h2:
+            w2 /= 4
+        else:
+            h2 /= 4
+        max_near_distance = math.sqrt(w2 + h2) + 5
+
+        random.shuffle(nodes)
+
+        for node in nodes:
+            def is_near(candidate):
+                return NavigationGraph.get_node_distance(candidate, node) < max_near_distance
+            neighbors = [candidate for candidate in nodes if is_near(candidate)]
+            for neighbor in neighbors:
+                if self.graph.degree(neighbor) < 8:
+                    val = random.random()*100
+                    if val > 50:
+                        self.add_edge(neighbor, node)
+                    elif val > 40:
+                        self.add_edge(node, neighbor)
