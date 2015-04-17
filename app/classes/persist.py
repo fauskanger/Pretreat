@@ -6,6 +6,11 @@ import os
 from app.config import config
 
 
+class PersistentNodeCollection:
+    # ToDO: Prepare nodes to be stored, or prepare nodes after loaded.
+    pass
+
+
 class PersistentStorage:
     def __init__(self):
         db_path = config.settings_path
