@@ -82,12 +82,16 @@ When one or more nodes are selected:
   - Installation package: Setuptools [ [Offical](https://pypi.python.org/pypi/setuptools) ] - required by NetworkX
   - Graph library: NetworkX 1.9.1 [ [How to install](http://networkx.github.io/documentation/networkx-1.9.1/install.html) ]
   - Windowing and multimedia library: Pyglet 1.2 [ [How to install](http://www.pyglet.org/download.html) ]
-  - Persistent Object Database: ZODB 4.1.0 [ [PyPi](https://pypi.python.org/pypi/ZODB#prerequisites) | [Home](http://www.zodb.org) | [Programming Guide](http://www.zodb.org/en/latest/documentation/guide/prog-zodb.html) ]
+  - Persistent Object Database: ZODB 4.1.0 [ [PyPi][zodbpypi] | [Home][zodbhome]) | [Programming Guide][zopg] ]
   
   ZODB requires a several prerequisites, and the wheels found [here](http://www.lfd.uci.edu/~gohlke/pythonlibs/)
   are ready to install on win7/8 too. The ones required for ZODB is added to the repository [here](wheels/ZODB).
   It should be noted that [the mentioned wheels library](http://www.lfd.uci.edu/~gohlke/pythonlibs/) 
   is a great source of Python libraries across platforms and versions. 
+  
+  [zodbpypi]: https://pypi.python.org/pypi/ZODB#prerequisites
+  [zodbhome]: http://www.zodb.org
+  [zopg]: http://www.zodb.org/en/latest/documentation/guide/prog-zodb.html
 
 ### Current/working Setup
   - Developed with 64-bit version of Python 3.4.2 (Kit: [Anaconda Python Package](https://store.continuum.io/cshop/anaconda/))
