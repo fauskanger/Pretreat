@@ -84,10 +84,10 @@ When one or more nodes are selected:
   - Windowing and multimedia library: Pyglet 1.2 [ [How to install](http://www.pyglet.org/download.html) ]
   - Persistent Object Database: ZODB 4.1.0 [ [PyPi][zodbpypi] | [Home][zodbhome] | [Programming Guide][zopg] ]
   
-ZODB requires a several prerequisites, and the wheels found [here](http://www.lfd.uci.edu/~gohlke/pythonlibs/)
+ZODB requires several prerequisites, and the wheels found [here](http://www.lfd.uci.edu/~gohlke/pythonlibs/)
 are ready to install on win7/8 too. The ones required for ZODB is added to the repository [here](wheels/ZODB).
-It should be noted that [the mentioned wheels library](http://www.lfd.uci.edu/~gohlke/pythonlibs/) 
-is a great source of Python libraries across platforms and versions. 
+It should be noted that the mentioned wheels library, http://www.lfd.uci.edu/~gohlke/pythonlibs/ is a great source 
+of Python libraries across platforms and versions. 
   
   [zodbpypi]: https://pypi.python.org/pypi/ZODB#prerequisites
   [zodbhome]: http://www.zodb.org
