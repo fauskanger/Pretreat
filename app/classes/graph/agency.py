@@ -1,6 +1,6 @@
 from app.config import config, seeded_random as random
 from app.pythomas import pythomas as lib
-from app.classes.graph.agent import Agent, AutonomousAgent, GoodAgent
+from app.classes.graph.agent import Agent, EvilAgent, GoodAgent, AutonomousAgent
 
 
 class Agency(object):
@@ -25,7 +25,7 @@ class Agency(object):
     def add_evil_agent(self, n_evils=1):
         start_n = len(self.agents)
         for n in range(n_evils):
-            self.agents.append(AutonomousAgent("Agent {}".format(n+start_n), self.nav_graph))
+            self.agents.append(EvilAgent("Agent {}".format(n+start_n), self.nav_graph))
 
     def update(self, dt):
         for agent in self.agents:

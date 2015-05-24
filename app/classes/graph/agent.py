@@ -77,22 +77,6 @@ class Agent(pyglet.event.EventDispatcher):
     def is_good_guy(self, compare_team='good'):
         return self.team == compare_team
 
-    def set_path(self, path_nodes, move_to_first_node=False):
-        if path_nodes:
-            self.path_nodes = path_nodes
-            self.set_target_node(self.path_nodes[-1])
-            if move_to_first_node:
-                self._move_to_first_path_node()
-
-    def _move_to_first_path_node(self):
-        self.move_to_node(self.path_nodes[0])
-        if len(self.path_nodes) > 1:
-            # self.set_target_node(self.path_nodes[1])
-            self.set_travel_state(self.TravelState.On_Start)
-        else:
-            self.set_target_node(self.current_node)
-            self.set_travel_state(self.TravelState.On_Target)
-
     def set_animation_move(self, set_to_move=True):
         if self.animation:
             if set_to_move:
@@ -119,6 +103,25 @@ class Agent(pyglet.event.EventDispatcher):
     def is_idle(self):
         return self.state is self.State.Idle
 
+    def _is_on_target(self):
+        return self.current_node is self.target_node
+
+    def set_path(self, path_nodes, move_to_first_node=False):
+        if path_nodes:
+            self.path_nodes = path_nodes
+            self.set_target_node(self.path_nodes[-1])
+            if move_to_first_node:
+                self._move_to_first_path_node()
+
+    def _move_to_first_path_node(self):
+        self.move_to_node(self.path_nodes[0])
+        if len(self.path_nodes) > 1:
+            # self.set_target_node(self.path_nodes[1])
+            self.set_travel_state(self.TravelState.On_Start)
+        else:
+            self.set_target_node(self.current_node)
+            self.set_travel_state(self.TravelState.On_Target)
+
     def set_target_node(self, target_node, set_to_run=False):
         self.target_node = target_node
         if target_node is None:
@@ -127,9 +130,6 @@ class Agent(pyglet.event.EventDispatcher):
             self.animation.set_target_position(target_node.get_position(), set_to_move=False)
         if set_to_run and self.state != self.State.Running:
             self.set_state(self.State.Running)
-
-    def _is_on_target(self):
-        return self.current_node is self.target_node
 
     def leave_current_node(self):
         if self.current_node:
