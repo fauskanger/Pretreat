@@ -24,7 +24,7 @@ class Analyzer:
         for i in range(1, len(nodes)-1):
             predecessor = nodes[i-1]
             node = nodes[i]
-            self.nav_graph.block_node(node)
+            self.nav_graph.add_occupant(node)
             cost = self.nav_graph.pathfinder.get_path_cost()
             if not cost or cost == infinity:
                 irreplaceable_nodes.append(node)
@@ -32,7 +32,7 @@ class Analyzer:
             else:
                 costs[node] = cost
             block_chances[node] = 1 / (len(nodes) - 2)
-            self.nav_graph.unblock_node(node)
+            self.nav_graph.remove_occupant(node)
         chance_of_open = 1
         for node in irreplaceable_nodes:
             chance_of_open *= (1-block_chances[node])

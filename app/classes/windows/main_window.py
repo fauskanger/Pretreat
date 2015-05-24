@@ -1,13 +1,12 @@
-import pyglet
 from pyglet.window import key, mouse
 
 from app.config import config
 from app.pythomas import pythomas as lib
 from app.pythomas.pythomas import PygletLib as Plib
 from app.classes.windows.base_window import BaseWindow
-from app.classes.graph.agent import SuperAgent
 from app.classes.graph.navigation_graph import NavigationGraph, Node
 from app.classes.graph.analyzer import Analyzer
+from app.classes.graph.agent import GoodAgent
 
 
 class MainWindow(BaseWindow):
@@ -20,7 +19,6 @@ class MainWindow(BaseWindow):
         self.altitude_image = self.nav_graph.altitude_image
         self.background_image = self.altitude_image
 
-        self.agent = SuperAgent()
         self.window.set_visible(True)
         if not self.window.fullscreen:
             self.window.set_size(config.window.default_width, config.window.default_height)
@@ -37,7 +35,6 @@ class MainWindow(BaseWindow):
         self.next_node_click_state = None
 
     def update(self, dt):
-        self.agent.update(dt)
         self.nav_graph.update(dt)
 
     def on_draw(self):
@@ -48,8 +45,6 @@ class MainWindow(BaseWindow):
         def draw_graph():
             self.nav_graph.draw()
         draw_graph()
-        if self.agent.state != self.agent.State.Idle:
-            self.agent.draw()
 
     def draw_graph_grid(self):
         start_label = destination_label = None
@@ -59,7 +54,7 @@ class MainWindow(BaseWindow):
             if self.nav_graph.pathfinder.destination_node:
                 destination_label = self.nav_graph.pathfinder.destination_node.label
         self.nav_graph.clear()
-        self.nav_graph.generate_grid_with_margin(8, 11, 0.1, self.window.width, self.window.height)
+        self.nav_graph.generate_grid_with_margin(4, 5, 0.1, self.window.width, self.window.height, make_hex=False)
         for node in self.nav_graph.graph.nodes():
             if start_label and node.label == start_label:
                 self.nav_graph.set_start_node(node)
@@ -231,9 +226,9 @@ class MainWindow(BaseWindow):
         if symbol == key.B:
             for node in self.nav_graph.get_selected_nodes():
                 if node.has_occupants():
-                    self.nav_graph.unblock_node(node)
+                    self.nav_graph.remove_occupant(node, remove_all=True)
                 else:
-                    self.nav_graph.block_node(node)
+                    self.nav_graph.add_occupant(node)
         if symbol == key.C:
             path_edges = self.nav_graph.pathfinder.get_path_edges()
             self.nav_graph.pathfinder.waypoints.clear()
@@ -247,6 +242,19 @@ class MainWindow(BaseWindow):
         if symbol == key.W:
             self.nav_graph.pathfinder.waypoints.clear()
             self.nav_graph.pathfinder.refresh_path()
+        if symbol == key.M:
+            if Plib.is_ctrl(modifiers):
+                my_inp = input("What should I call the current graph?")
+                print("You typed {}. Is that correct?".format(my_inp))
+                yn = input("y/n:")
+                print("{} it is.".format(yn))
+                pass
+        if symbol == key.O:
+            self.nav_graph.agency.create_new_set(n_evils=1, reset_path=False)
+        if symbol == key.P:
+            self.nav_graph.agency.create_new_set(n_evils=1, reset_path=True)
+        if symbol == key.L:
+            self.nav_graph.agency.add_evil_agent(n_evils=1)
 
     def on_resize(self, width, height):
         self.background_image.width = width

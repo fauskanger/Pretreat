@@ -49,6 +49,9 @@ class Node:
         self._is_path_node = False
         self._is_selected = is_selected
 
+    def __str__(self):
+        return "{}(1)".format(type(self), self.label)
+
     def add_occupant(self, occupant):
         if occupant not in self.occupants:
             self.occupants.append(occupant)
@@ -56,6 +59,8 @@ class Node:
         return False
 
     def remove_all_occupants(self):
+        for agent in self.occupants:
+            agent.leave_current_node()
         self.occupants.clear()
 
     def remove_occupant(self, occupant):
@@ -63,6 +68,15 @@ class Node:
 
     def has_occupants(self):
         return len(self.occupants) > 0
+
+    def any_occupant_is_not(self, team='good'):
+        return any(agent.team != team for agent in self.occupants)
+
+    def any_occupant_is(self, team='good'):
+        return any(agent.team == team for agent in self.occupants)
+
+    def all_occupants_are(self, team='good', if_none=True):
+        return if_none if not self.occupants else all(agent.team == team for agent in self.occupants)
 
     def get_distance_to(self, node):
         return lib.get_point_distance(self.get_position(), node.get_position())
@@ -213,11 +227,15 @@ class Node:
             self.select_circle.delete()
         if self.path_circle:
             self.path_circle.delete()
+        self.remove_all_occupants()
 
     def update(self, dt):
         self.set_color(Node.get_state_color(self.state))
         self.update_path_indicator()
         self.update_selected_indicator()
         if self.has_occupants():
-            self.set_color(config.world.node_occupied_color)
+            if self.any_occupant_is(team='evil'):
+                self.set_color(config.world.node_occupied_color)
+            else:
+                self.set_color(config.world.node_occupied_good_color)
 

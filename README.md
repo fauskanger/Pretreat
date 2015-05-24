@@ -274,21 +274,19 @@ class for iterable pathfinders, or for now, the PretreatPathfinder.
 
 ```python
 class Pathfinder(pyglet.event.EventDispatcher):
-    @staticmethod
-    def get_event_type_on_path_update():
-        return strings.events.on_path_update
+    event_type_on_path_update = strings.events.on_path_update
 
     def __init__(self, graph, altitude_function=None):
         self.graph = graph
         self.start_node = None
         self.destination_node = None
         self.path = None
-        self.register_event_type(Pathfinder.get_event_type_on_path_update())
+        self.register_event_type(self.event_type_on_path_update)
         self.altitude_function = altitude_function
 ```
 The [path](app/classes/graph/path.py) is created by the pathfinder in the `update_to_new_path`-method.
 Pyglet's event module separate the events using strings, and a user without the config module can use 
-a static method `get_event_type_on_path_update` to obtain the corresponding string.
+access `Pathfinder.event_type_on_path_update` to obtain the corresponding string.
 ```python
     def get_edge_cost(self, from_node, to_node):
         return lib.get_point_distance(from_node.get_position(), to_node.get_position())

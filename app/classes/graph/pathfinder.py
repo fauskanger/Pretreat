@@ -10,9 +10,7 @@ from app.classes.graph.node import Node
 
 
 class Pathfinder(pyglet.event.EventDispatcher):
-    @staticmethod
-    def get_event_type_on_path_update():
-        return strings.events.on_path_update
+    event_type_on_path_update = strings.events.on_path_update
 
     def __init__(self, graph, altitude_function=None):
         self.graph = graph
@@ -21,7 +19,6 @@ class Pathfinder(pyglet.event.EventDispatcher):
         self.path = None
         if False:
             self.path = Path(None)
-        self.register_event_type(Pathfinder.get_event_type_on_path_update())
         self.altitude_function = altitude_function
         self.refresh_timer = 0
         self._refresh_path = False
@@ -152,7 +149,7 @@ class Pathfinder(pyglet.event.EventDispatcher):
     def update_to_new_path(self):
         new_path = self.assemble_waypoint_paths()
         if not self.path or new_path and new_path.get_node_list() != self.path.get_node_list():
-            event_type = Pathfinder.get_event_type_on_path_update()
+            event_type = self.event_type_on_path_update
             self._set_path(new_path)
             self.dispatch_event(event_type, self.path)
 
@@ -222,8 +219,8 @@ class Pathfinder(pyglet.event.EventDispatcher):
             return self.path.get_node_list()
         return []
 
-# # Register event type to class
-# Pathfinder.register_event_type(strings.events.on_path_update)
+# Register event on class
+Pathfinder.register_event_type(Pathfinder.event_type_on_path_update)
 
 
 class AStarPathfinder(Pathfinder):

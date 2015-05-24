@@ -124,3 +124,5 @@ class TestWindow(BaseWindow):
             # data = (config.world.vertex_mode, shape.vertex_list.vertices), \
             #        (config.world.color_mode, shape.vertex_list.colors)
             # self.batch.add(count, mode, group, *data)
+
+

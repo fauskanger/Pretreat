@@ -18,7 +18,11 @@ class Edge:
         self.line_triangles = []
         self.color = config.world.edge_triangle_color
         self.is_path_edge = False
+        self._drawing_triangles = False
+
+        #   NB! Must be started AFTER all attributes are set:
         self.update_shape()
+        #
 
     def get_from_point(self):
         if self.from_circle:
@@ -34,10 +38,11 @@ class Edge:
         if self.line_rectangle.color != self.color:
             self.line_rectangle.set_color(self.color)
         self.line_rectangle.draw(batch)
-        for triangle in self.line_triangles:
-            if triangle.color != self.color:
-                triangle.set_color(self.color)
-            triangle.draw(batch)
+        if self._drawing_triangles:
+            for triangle in self.line_triangles:
+                if triangle.color != self.color:
+                    triangle.set_color(self.color)
+                triangle.draw(batch)
         # self.inner_from_shape.draw(batch)
         # self.inner_to_shape.draw(batch)
         self.from_circle.draw(batch)
@@ -111,7 +116,8 @@ class Edge:
                                                                       height=triangle_height, rotation=theta,
                                                                       color=triangle_color, z=self.z)
                     self.line_triangles.append(triangle)
-            add_triangles()
+            if self._drawing_triangles:
+                add_triangles()
             inner_color = config.world.edge_in_node_color
             inner_line_width = 4
             if self.inner_from_shape:

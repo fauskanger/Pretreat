@@ -9,6 +9,7 @@ from app.pythomas import pythomas as lib
 from app.classes.graph.node import Node
 from app.classes.graph.edge import Edge
 from app.classes.graph.pathfinder import AStarPathfinder, CustomPathfinder
+from app.classes.graph.agency import Agency
 from app.classes.graph.pretreat_pathfinder import PretreatPathfinder
 
 
@@ -24,14 +25,16 @@ class NavigationGraph():
         self.node_selected_dirty = False    # Selected/deselected nodes
         self.render_batch = pyglet.graphics.Batch()
         self.edge_update_timer = 0
+        self.agency = Agency(self)
         self.update_edge_on_next = []
 
     def get_altitude(self, position):
         min_altitude = config.world.min_altitude
         max_altitude = config.world.max_altitude
-        pixel_value = 1 - lib.get_pixel(self.altitude_image, position)[0]/255
-        altitude = (max_altitude - min_altitude) * pixel_value + min_altitude
-        return altitude
+        # pixel_value = 1 - lib.get_pixel(self.altitude_image, position)[0]/255
+        # altitude = (max_altitude - min_altitude) * pixel_value + min_altitude
+        # return altitude
+        return min_altitude
 
     def altitude_function(self, from_node, to_node):
         to_alt = self.get_altitude(to_node.get_position())
@@ -129,6 +132,18 @@ class NavigationGraph():
             print("Nope! Cannot set destination node: {0}, existing: {1}"
                   .format(node, self.pathfinder.destination_node))
 
+    def create_random_path(self, only_if_none=False):
+        if not only_if_none or not self.pathfinder.get_path_nodes():
+            # if not self.graph.nodes():
+            #     self.generate_grid_with_margin(5, 5, 100, 400, 300)
+            count = 0
+            while not self.pathfinder.get_path_nodes() and count < 5:
+                count += 1
+                start, destination = random.sample(self.graph.nodes(), 2)
+                self.set_start_node(start)
+                self.set_destination_node(destination)
+                self.pathfinder.update_to_new_path()
+
     def create_edge_from_selected_to(self, node):
         for selected_node in self.get_selected_nodes():
             self.add_edge(selected_node, node)
@@ -138,6 +153,8 @@ class NavigationGraph():
             self.add_edge(node, selected_node)
 
     def update_node_edges(self, node):
+        if not node in self.graph:
+            return
         for neighbor_node in nx.all_neighbors(self.graph, node):
             def update_edge_weight(from_node, to_node):
                 if self.graph.has_edge(from_node, to_node):
@@ -380,23 +397,27 @@ class NavigationGraph():
         self.update_nodes(dt)
         self.update_edges(dt)
         self.update_path(dt)
+        self.agency.update(dt)
 
         self.node_positions_dirty = False
         self.node_set_dirty = False
         self.node_selected_dirty = False
 
-    def block_node(self, node):
+    def add_occupant(self, node, occupant=True):
         if not node.has_occupants() and node.state is Node.State.Default:
-            node.add_occupant(True)
+            node.add_occupant(occupant)
             self.node_set_dirty = True
-            self.update_node_edges(node)
+            # self.update_node_edges(node)
             self.pathfinder.notify_node_change(node)
 
-    def unblock_node(self, node):
+    def remove_occupant(self, node, occupant=True, remove_all=False):
         if node.has_occupants():
-            node.remove_all_occupants()
+            if remove_all:
+                node.remove_all_occupants()
+            else:
+                node.remove_occupant(occupant)
             self.node_set_dirty = True
-            self.update_node_edges(node)
+            # self.update_node_edges(node)
             self.pathfinder.notify_node_change(node)
 
     def update_nodes(self, dt):
@@ -440,13 +461,13 @@ class NavigationGraph():
             self.remove_node(node)
         print("All nodes and edges removed.")
 
-    def generate_grid_with_margin(self, rows, cols, margin, width, height):
+    def generate_grid_with_margin(self, rows, cols, margin, width, height, make_hex=True):
         if margin > 1:
             margin = 1
         if margin < 0:
             margin = 0
         w, h = width, height
-        self.generate_grid(rows, cols, (1-margin)*w, (1-margin)*h, (margin*w, margin*h))
+        self.generate_grid(rows, cols, (1-margin)*w, (1-margin)*h, (margin*w, margin*h), make_hex)
 
     def generate_grid(self, row_count, col_count, max_width, max_height, start_pos=(0, 0), make_hex=True):
         nodes = []
@@ -464,7 +485,7 @@ class NavigationGraph():
                 x, y = lib.sum_points((x, y), start_pos)
                 if odd:
                     y += hex_offset
-                if not odd or row_i < row_count - 1:
+                if not (odd and make_hex) or row_i < row_count - 1:
                     node = self.create_node((x, y))
                     nodes.append(node)
                     self.add_node(node)
@@ -484,10 +505,30 @@ class NavigationGraph():
             def is_near(candidate):
                 return NavigationGraph.get_node_distance(candidate, node) < max_near_distance
             neighbors = [candidate for candidate in nodes if is_near(candidate)]
+            max_degree = 6
             for neighbor in neighbors:
-                if self.graph.degree(neighbor) < 8:
+                degree = self.graph.degree(neighbor)
+                if degree < max_degree:
                     val = random.random()*100
-                    if val > 50:
+                    if val > degree/max_degree*75:
                         self.add_edge(neighbor, node)
-                    elif val > 40:
                         self.add_edge(node, neighbor)
+
+    def neighbors_of(self, node):
+        try:
+            return self.graph.neighbors(node)
+        except nx.exception.NetworkXError:
+            return []
+
+    def get_random_neighbor(self, from_node, include_from=True, node_filter_callback=None):
+        if not from_node:
+            return None
+        candidates = self.neighbors_of(from_node)
+        if include_from:
+            candidates.append(from_node)
+        if node_filter_callback:
+            candidates = [node for node in candidates if node_filter_callback(node)]
+            if not candidates:
+                return None
+        return random.choice(candidates)
+

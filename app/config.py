@@ -7,6 +7,7 @@ class Configurations():
         class Events():
             def __init__(self):
                 self.on_path_update = 'on_path_update'
+                self.on_agent_update = 'on_agent_update'
 
         def __init__(self):
             self.title = 'Pretreat'
@@ -83,6 +84,9 @@ class Configurations():
             self.edge_triangle_color = self.node_color
             self.selected_node_color = colors.extra.orange_red
             self.node_occupied_color = colors.red
+            self.node_occupied_good_color = colors.extra.green
+
+            self.draw_agent_animation = False
 
             self.path_edge_color = colors.extra.crimson
             self.path_node_color = self.path_edge_color
@@ -104,8 +108,9 @@ class Configurations():
 
             self.default_rand_seed = 13
             self.blocked_node_edge_cost = float("inf")
-            self.edge_refresh_interval = 1/30
-            self.pathfinder_refresh_interval = 1/30
+            self.edge_refresh_interval = 1.0/60
+            self.pathfinder_refresh_interval = 1.0/60
+            self.agent_step_interval = 2  # seconds
             self.z_indexes = self.ZIndexes()
 
     def __init__(self):
