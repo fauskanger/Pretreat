@@ -1,3 +1,4 @@
+import math
 import sys
 import csv
 from itertools import count
@@ -52,7 +53,7 @@ class WalkDataKey:
     def complete(self):
         return self.death or self.success
 
-    def __str__(self):
+    def __repr__(self):
         s = '{}\t\t{}\t\t{}\t\t\t{}\t\t\t{}\t\t{}'\
             .format(*self.csv_line())
         return s
@@ -144,6 +145,12 @@ class ConsoleView(View):
             path_nodes = self.nav_graph.pathfinder.get_path_nodes()
         return path_nodes
 
+    def get_fairest_n_evils(self, p_walk_ok=0.5):
+        dimension = self.walk_data_key.n_rows * self.walk_data_key.n_cols
+        path_len = self.walk_data_key.n_rows + self.walk_data_key.n_cols - 1
+        n_evils = dimension * (1 + math.log(p_walk_ok)/path_len)
+        return n_evils
+
     def run_repeated_walks(self, n_rows, n_cols):
         path_nodes = self.create_until_path(n_rows, n_cols)
         nodes = self.nav_graph.graph.nodes()
@@ -158,9 +165,14 @@ class ConsoleView(View):
         fail = 0
         walk_i = -1
         n_runs = 1000
+        n_evil_steps = 10
         min_evils = 2
-        max_evils = 10
-        while True:
+        max_evils = int(self.get_fairest_n_evils(p_walk_ok=0.5) * 1.1)
+        if min_evils >= max_evils:
+            max_evils = min_evils + 1
+        step = int((max_evils - min_evils) / n_evil_steps)
+        step = step if step >= 1 else 1
+        for n_evils in range(min_evils, max_evils, step):
             walk_i += 1
             self.walk_data_key.walk_i = walk_i
             n_evils = min_evils + (max_evils-min_evils) * int(walk_i/n_runs)
