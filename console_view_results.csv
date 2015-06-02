@@ -1,0 +1,6 @@
+"sep=,"
+Rows,Cols,Distance,PathLen,Success,Death,Count
+5,5,3,4,True,False,803
+5,5,1,4,False,True,72
+5,5,3,4,False,True,51
+5,5,2,4,False,True,75

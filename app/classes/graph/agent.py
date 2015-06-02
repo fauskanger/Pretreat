@@ -4,16 +4,19 @@ import networkx as nx
 from enum import Enum
 from pyglet.event import EventDispatcher
 
-from app.config import config, global_string_values as strings, seeded_random as random
+from app.config import config, teams, global_string_values as strings, seeded_random as random
 from app.pythomas import pythomas as lib
+from app.pythomas import shapes as shapelib
 from app.pythomas.pythomas import PygletLib as Plib
 
 from app.classes.animation import Animation
 
-if False:
+if False:  # Included for auto-completion in PyCharm. Behind if-False to prevent circular dependencies
     from app.classes.graph.navigation_graph import NavigationGraph
 
 agent_number = 1
+_good_color = config.world.node_occupied_good_color
+_evil_color = config.world.node_occupied_evil_color
 
 
 class Trip:
@@ -55,8 +58,11 @@ class Agent(pyglet.event.EventDispatcher):
         agent_number += 1
         self.name = name
         self.nav_graph = nav_graph
+        if False:
+            self.nav_graph = NavigationGraph()
         self.push_handlers(self.nav_graph.agency)
         self.animation = animation
+        self.circle = None
 
         self.step_interval = step_interval
         self.step_reached = False
@@ -74,7 +80,7 @@ class Agent(pyglet.event.EventDispatcher):
             self.set_path(path)
         self.dispatch_event(self.event_type_on_agent_update, self, "Agent Created, Ready for duty!")
 
-    def is_good_guy(self, compare_team='good'):
+    def is_good_guy(self, compare_team=teams.good):
         return self.team == compare_team
 
     def set_animation_move(self, set_to_move=True):
@@ -164,6 +170,8 @@ class Agent(pyglet.event.EventDispatcher):
     def draw(self, batch=None):
         if self.animation and config.world.draw_agent_animation:
             self.animation.draw(batch)
+        if self.circle:
+            self.circle.draw(batch)
 
     def _update_step_timer(self, dt):
         self._dt_counter += dt
@@ -176,9 +184,30 @@ class Agent(pyglet.event.EventDispatcher):
         self._update_step_timer(dt)
         if self.animation and config.world.draw_agent_animation:
             self.animation.update(dt)
+        self._set_circle_to_current_node()
+
+    def _set_circle_to_current_node(self):
+        node = self.current_node
+        if node:
+            pos = node.get_position()
+            r = node.get_radius()
+            color = _good_color if self.team == 'good' else _evil_color
+            if not self.circle:
+                self.circle = shapelib.Circle(position=pos, radius=r, color=color, batch=self.nav_graph.render_batch)
+            circle = self.circle
+            if circle.get_position() != pos:
+                circle.set_position(pos)
+            if circle.radius != r:
+                circle.set_radius(r)
+            if circle.color != color:
+                circle.set_color(color)
 
     def start(self):
         pass
+
+    def _set_idle(self):
+        self.set_travel_state(self.TravelState.Unassigned)
+        self.set_state(self.state.Idle)
 
 # Register event
 Agent.register_event_type(Agent.event_type_on_agent_update)
@@ -190,9 +219,6 @@ class GoodAgent(Agent):
         # self.animation = Animation(self.agent_image, 8, 8, start_rotation=-math.pi)
         Agent.__init__(self, "Agent #111", nav_graph=nav_graph, animation=None,
                        step_interval=step_interval, team='good')
-        path = self.nav_graph.pathfinder.get_path_nodes()
-        self.set_path(path, move_to_first_node=False)
-        self.set_target_node(self.path_nodes[-1])
 
     def update(self, dt):
         super().update(dt)
@@ -200,6 +226,10 @@ class GoodAgent(Agent):
             self.move_to_next_node()
 
     def start(self):
+        if not self.path_nodes:
+            path = self.nav_graph.pathfinder.get_path_nodes()
+            self.set_path(path, move_to_first_node=False)
+            self.set_target_node(self.path_nodes[-1])
         if self.path_nodes:
             first_node = self.path_nodes[0]
             if first_node.all_occupants_are(team=self.team, if_none=True):
@@ -209,34 +239,35 @@ class GoodAgent(Agent):
 class AutonomousAgent(Agent):
     def __init__(self, name, nav_graph, animation=None, step_interval=config.world.agent_step_interval, team='evil'):
         Agent.__init__(self, name, nav_graph, animation, step_interval=step_interval, team=team)
-        self.start()
-        if False:
-            self.nav_graph = NavigationGraph()
 
-    def set_random_next_as_target(self):
+    def _set_random_next_as_target(self):
         def callback(node):
             return node is self.current_node or not node.any_occupant_is(self.team)
         next_node = self.nav_graph\
             .get_random_neighbor(self.current_node, include_from=True, node_filter_callback=callback)
         self.set_path([self.current_node, next_node])
 
-    def move_to_random_next(self):
-        self.set_random_next_as_target()
+    def _move_to_random_next(self):
+        self._set_random_next_as_target()
         self.move_to_next_node()
 
     def update(self, dt):
         super().update(dt)
         if self.step_reached:
-            self.move_to_random_next()
+            self._move_to_random_next()
 
     def start(self):
         super().start()
         if self.nav_graph.graph.nodes():
             self.set_state(self.State.Running)
-            self.move_to_random_next()
-        else:
-            self.set_travel_state(self.TravelState.Unassigned)
-            self.set_state(self.state.Idle)
+            available_nodes = [node for node in self.nav_graph.graph.nodes_iter() if not node.has_occupants()]
+            start_node = random.choice(available_nodes)
+            if start_node:
+                self.move_to_node(start_node)
+                self._move_to_random_next()
+                return
+
+        self._set_idle()
 
 
 class EvilAgent(AutonomousAgent):

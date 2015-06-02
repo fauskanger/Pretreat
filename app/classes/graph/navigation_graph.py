@@ -16,6 +16,7 @@ from app.classes.graph.pretreat_pathfinder import PretreatPathfinder
 class NavigationGraph():
     def __init__(self):
         self.graph = nx.DiGraph()
+        self._no_visuals = False
         # self.selected_nodes = []
         self.altitude_image = pyglet.resource.image(lib.resource(config.strings.altitude_map))
         self.pathfinder = AStarPathfinder(self.graph, self.altitude_function)
@@ -27,6 +28,9 @@ class NavigationGraph():
         self.edge_update_timer = 0
         self.agency = Agency(self)
         self.update_edge_on_next = []
+
+    def set_no_visuals(self, no_visuals=False):
+        self._no_visuals = no_visuals
 
     def get_altitude(self, position):
         min_altitude = config.world.min_altitude
@@ -76,11 +80,13 @@ class NavigationGraph():
 
     @staticmethod
     def get_node_distance(from_node, to_node):
-        x = abs(from_node.x - to_node.x)
-        y = abs(from_node.y - to_node.y)
+        x = from_node.x - to_node.x
+        y = from_node.y - to_node.y
         return math.sqrt(x * x + y * y)
 
     def is_valid_node_position(self, position, node_exceptions=None):
+        if self._no_visuals:
+            return True
         for existing_node in self.graph.nodes():
             if node_exceptions and existing_node in node_exceptions:
                 continue
@@ -287,7 +293,7 @@ class NavigationGraph():
             return False
         weight = self.pathfinder.calculate_edge_cost(from_node, to_node)
         try:
-            self.graph.add_edge(from_node, to_node, weight=weight, object=Edge(from_node, to_node))
+            self.graph.add_edge(from_node, to_node, weight=weight, object=Edge(from_node, to_node, self._no_visuals))
         except nx.NetworkXError:
             return False
         else:
@@ -461,6 +467,24 @@ class NavigationGraph():
             self.remove_node(node)
         print("All nodes and edges removed.")
 
+    def generate_viewless_grid(self, row_count, col_count, make_hex=True):
+        def dimension(n):
+            return (n-1) * 2 * config.world.node_padding + n * config.world.node_radius
+        max_width = dimension(row_count)
+        max_height = dimension(col_count)
+        self.generate_grid(row_count, col_count, max_width, max_height, make_hex=make_hex)
+        i = -1
+
+        for node in sorted(self.graph.nodes(), key=lambda n: n.y * 1024 + n.x):
+            i += 1
+            ri = int(i / col_count)
+            ci = i % col_count
+            node.x_print = ri
+            node.y_print = ci
+            # if ci == 0:
+            #     print('\n')
+            # print('\t{}: {},{}-{},{}'.format(node, node.x, node.y, node.x_print, node.y_print))
+
     def generate_grid_with_margin(self, rows, cols, margin, width, height, make_hex=True):
         if margin > 1:
             margin = 1
@@ -499,6 +523,7 @@ class NavigationGraph():
             h2 /= 4
         max_near_distance = math.sqrt(w2 + h2) + 5
 
+        nodes = self.graph.nodes()
         random.shuffle(nodes)
 
         for node in nodes:

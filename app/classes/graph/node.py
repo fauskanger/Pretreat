@@ -25,7 +25,9 @@ class Node:
         self.default_color = config.world.node_color
         self.current_color = self.default_color
         self.x = x
+        self.x_print = self.x
         self.y = y
+        self.y_print = self.y
         self.z = config.world.z_indexes.node
         self.z_path = self.z - 10
         self.z_selected = self.z_path - 10
@@ -49,8 +51,8 @@ class Node:
         self._is_path_node = False
         self._is_selected = is_selected
 
-    def __str__(self):
-        return "{}(1)".format(type(self), self.label)
+    def __repr__(self):
+        return "{} #{} {},{}".format(self.__class__.__name__, self.label, self.x_print, self.y_print)
 
     def add_occupant(self, occupant):
         if occupant not in self.occupants:
@@ -83,7 +85,8 @@ class Node:
 
     def set_label(self, label):
         self.label = label
-        self.text_label.text = self.label
+        if self.text_label:
+            self.text_label.text = self.label
 
     def set_as_selected(self, selected):
         self._is_selected = selected
@@ -213,6 +216,11 @@ class Node:
                 self.circle.expand_radius(radius_offset)
 
         draw_circle()
+        self.draw_occupants(batch)
+
+    def draw_occupants(self, batch):
+        for agent in self.occupants:
+            agent.draw(batch)
 
     def set_color(self, color):
         self.circle.set_color(color)
@@ -233,9 +241,9 @@ class Node:
         self.set_color(Node.get_state_color(self.state))
         self.update_path_indicator()
         self.update_selected_indicator()
-        if self.has_occupants():
-            if self.any_occupant_is(team='evil'):
-                self.set_color(config.world.node_occupied_color)
-            else:
-                self.set_color(config.world.node_occupied_good_color)
+        # if self.has_occupants():
+        #     if self.any_occupant_is(team='evil'):
+        #         self.set_color(config.world.node_occupied_evil_color)
+        #     else:
+        #         self.set_color(config.world.node_occupied_good_color)
 

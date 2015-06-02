@@ -6,7 +6,7 @@ from app.pythomas import shapes as shapelib
 
 
 class Edge:
-    def __init__(self, from_node, to_node):
+    def __init__(self, from_node, to_node, skip_update=False):
         self.z = config.world.z_indexes.path
         self.from_node = from_node
         self.to_node = to_node
@@ -20,9 +20,9 @@ class Edge:
         self.is_path_edge = False
         self._drawing_triangles = False
 
-        #   NB! Must be started AFTER all attributes are set:
-        self.update_shape()
-        #
+        if not skip_update:
+            #   NB! Must be started AFTER all attributes are set:
+            self.update_shape()
 
     def get_from_point(self):
         if self.from_circle:

@@ -53,7 +53,7 @@ class Pathfinder(pyglet.event.EventDispatcher):
         distance_coefficient = 1
         distance = lib.get_point_distance(from_node.get_position(), to_node.get_position())
         alt_raise = 0 if not self.altitude_function else self.altitude_function(from_node, to_node)
-        slope = alt_raise/distance
+        slope = alt_raise/distance if distance else 0
         alt_contribution = float("inf")  # Float representation of infinity
         if min_slope < slope < max_slope:
             alt_contribution = slope - min_slope

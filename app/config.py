@@ -9,6 +9,10 @@ class Configurations():
                 self.on_path_update = 'on_path_update'
                 self.on_agent_update = 'on_agent_update'
 
+        class Teams:
+            good = 'good'
+            evil = 'evil'
+
         def __init__(self):
             self.title = 'Pretreat'
             self.resource_path = 'app/resources'
@@ -28,6 +32,7 @@ class Configurations():
             self.altitude = 'altitude'
 
             self.events = self.Events()
+            self.teams = self.Teams
 
     class Window():
         def __init__(self):
@@ -47,6 +52,7 @@ class Configurations():
                 self.path = -1000
                 self.node = -100
                 self.node_path = self.node-10
+                self.agent = 0
 
         def __init__(self):
             self.size_x = 18
@@ -83,7 +89,7 @@ class Configurations():
             self.edge_in_node_color = colors.gray_66
             self.edge_triangle_color = self.node_color
             self.selected_node_color = colors.extra.orange_red
-            self.node_occupied_color = colors.red
+            self.node_occupied_evil_color = colors.red
             self.node_occupied_good_color = colors.extra.green
 
             self.draw_agent_animation = False
@@ -132,3 +138,4 @@ import random as original_random
 
 seeded_random = original_random.Random()
 seeded_random.seed(config.world.default_rand_seed)
+teams = config.strings.Teams
