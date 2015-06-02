@@ -1,3 +1,4 @@
+import sys
 import csv
 from itertools import count
 
@@ -97,18 +98,25 @@ class ConsoleView(View):
         writer.writerow(line)
 
     def save_results(self):
+        def print_progress(ratio):
+            sys.stdout.write("\rSaving to file.. Progress: {:.3f}%".format(ratio))
+            sys.stdout.flush()
+
         used_keys = []
         # print('\n\tRows \tCols \tDistance \tPathLen \tSuccess \tDeath \tCount')
         with open('console_view_results.csv', 'w', newline='', encoding='utf-8') as f:
             self.write_csv(['sep=,'], f)
             self.write_csv('\n\tRows \tCols \tDistance \tPathLen \tSuccess \tDeath \tCount'.split(), f)
+            ki = -1
             for walk_key in self.walk_keys:
+                ki += 1
                 key = walk_key.key()
                 r_count = self.stats[key]
                 if key not in used_keys:
                     line = walk_key.csv_line()
                     line.append(r_count)
                     self.write_csv(line, f)
+                    print_progress(ki / len(self.walk_keys))
                     # print('\t{}\t{}'.format(walk_key, count))
                 used_keys.append(key)
 
