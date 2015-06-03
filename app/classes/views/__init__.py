@@ -49,6 +49,7 @@ class WalkDataKey:
         self.path_len = -1
         self.death = False
         self.success = False
+        self.n_evils = -1
 
     def complete(self):
         return self.death or self.success
@@ -62,7 +63,7 @@ class WalkDataKey:
         return str(self)
 
     def csv_line(self):
-        return [self.n_rows, self.n_cols, self.path_i, self.path_len, self.success, self.death]
+        return [self.n_rows, self.n_cols, self.path_i, self.n_evils, self.path_len, self.success, self.death]
 
 class ConsoleView(View):
     class StatsNames:
@@ -87,71 +88,27 @@ class ConsoleView(View):
         print("Starting {}".format(self.name))
         n_rows_min, n_cols_min = 5, 5
         n_rows_max, n_cols_max = 20, 20
-        for n_rows in range(n_rows_min, n_rows_max, 3):
+        rows_iter = [i for i in range(n_rows_min, n_rows_max, 3)]
+        cols_iter = [i for i in range(n_cols_min, n_cols_max, 3)]
+        row_i = -1
+        for n_rows in rows_iter:
+            row_i += 1
             self.walk_data_key.n_rows = n_rows
-            for n_cols in range(n_cols_min, n_cols_max, 3):
+            col_i = -1
+            for n_cols in cols_iter:
+                col_i += 1
+
+                def get_progress():
+                    row_ratio = row_i/len(rows_iter)
+                    col_ratio = col_i/len(cols_iter)
+                    ratio_per_row = 1 / len(rows_iter)
+                    ratio_per_col = 1 / len(cols_iter) * ratio_per_row
+                    return row_ratio + col_ratio * ratio_per_row, ratio_per_col
                 self.walk_data_key.n_cols = n_cols
-                self.run_repeated_walks(n_rows, n_cols)
+                self.run_repeated_walks(n_rows, n_cols, get_progress)
         self.save_results()
 
-    def write_csv(self, line, f):
-        writer = csv.writer(f)
-        writer.writerow(line)
-
-    def save_results(self):
-        def print_progress(ratio):
-            sys.stdout.write("\rSaving to file.. Progress: {:.3f}%".format(ratio))
-            sys.stdout.flush()
-
-        used_keys = []
-        # print('\n\tRows \tCols \tDistance \tPathLen \tSuccess \tDeath \tCount')
-        with open('console_view_results.csv', 'w', newline='', encoding='utf-8') as f:
-            self.write_csv(['sep=,'], f)
-            self.write_csv('\n\tRows \tCols \tDistance \tPathLen \tSuccess \tDeath \tCount'.split(), f)
-            ki = -1
-            for walk_key in self.walk_keys:
-                ki += 1
-                key = walk_key.key()
-                r_count = self.stats[key]
-                if key not in used_keys:
-                    line = walk_key.csv_line()
-                    line.append(r_count)
-                    self.write_csv(line, f)
-                    print_progress(ki / len(self.walk_keys))
-                    # print('\t{}\t{}'.format(walk_key, count))
-                used_keys.append(key)
-
-        keys = [key.key() for key in self.walk_keys]
-        if any(key not in keys for key in self.stats.keys()):
-            raise Exception('Something is very wrong.')
-
-    def generate_new_grid(self, n_rows, n_cols):
-        self.nav_graph.generate_viewless_grid(n_rows, n_cols, make_hex=False)
-
-    def create_new_path(self):
-        start_node, destination_node = random.sample(self.nav_graph.graph.nodes(), 2)
-        self.nav_graph.set_start_node(start_node)
-        self.nav_graph.set_destination_node(destination_node)
-        self.nav_graph.pathfinder.update_to_new_path()
-        return self.nav_graph.pathfinder.get_path_nodes()
-
-    def create_until_path(self, n_rows, n_cols):
-        # Create graph and path
-        path_nodes = None
-        while not path_nodes:
-            self.nav_graph.clear()
-            self.generate_new_grid(n_rows, n_cols)
-            self.create_new_path()
-            path_nodes = self.nav_graph.pathfinder.get_path_nodes()
-        return path_nodes
-
-    def get_fairest_n_evils(self, p_walk_ok=0.5):
-        dimension = self.walk_data_key.n_rows * self.walk_data_key.n_cols
-        path_len = self.walk_data_key.n_rows + self.walk_data_key.n_cols - 1
-        n_evils = dimension * (1 + math.log(p_walk_ok)/path_len)
-        return n_evils
-
-    def run_repeated_walks(self, n_rows, n_cols):
+    def run_repeated_walks(self, n_rows, n_cols, get_progress):
         path_nodes = self.create_until_path(n_rows, n_cols)
         nodes = self.nav_graph.graph.nodes()
         self.walk_data_key.path_len = len(path_nodes)
@@ -161,29 +118,30 @@ class ConsoleView(View):
             waypoint = nodes[int(len(nodes)/2)]
             self.nav_graph.pathfinder.add_waypoint(waypoint)
 
-        ok = 0
-        fail = 0
-        walk_i = -1
         n_runs = 1000
+        for walk_i in range(0, n_runs):
+            progress, ratio_per_batch = get_progress()
+            progress += walk_i / n_runs * ratio_per_batch
+            self.print_progress(progress, 'Walking{}'.format(' .'*int(10*walk_i/n_runs)))
+            self.walk_data_key.walk_i = walk_i
+            self.walk_incremental_evils(path_nodes)
+
+    def walk_incremental_evils(self, path_nodes):
         n_evil_steps = 10
         min_evils = 2
-        max_evils = int(self.get_fairest_n_evils(p_walk_ok=0.5) * 1.1)
+        max_evils = int(self.get_n_evils_so(p_walk_ok=0.5)) + 1
+
         if min_evils >= max_evils:
             max_evils = min_evils + 1
         step = int((max_evils - min_evils) / n_evil_steps)
         step = step if step >= 1 else 1
+        nodes = self.nav_graph.graph.nodes()
         for n_evils in range(min_evils, max_evils, step):
-            walk_i += 1
-            self.walk_data_key.walk_i = walk_i
-            n_evils = min_evils + (max_evils-min_evils) * int(walk_i/n_runs)
-            if self.perform_walk(nodes, walk_i, path_nodes, n_evils):
-                ok += 1
-            else:
-                fail += 1
-            if not walk_i < n_runs:
-                break
+            self.walk_data_key.n_evils = n_evils
+            # n_evils = min_evils + (max_evils-min_evils) * int(walk_i/n_runs)
+            self.perform_walk(nodes, path_nodes, n_evils)
 
-    def perform_walk(self, nodes, walk_i, path_nodes, n_evils):
+    def perform_walk(self, nodes, path_nodes, n_evils):
         # print('Path: {}'.format(path_nodes))
 
         # Add evil nodes
@@ -197,19 +155,19 @@ class ConsoleView(View):
             # print('Current: {}\nEvils: {}'.format(node, evils))
             new_evils = self.move_evils(evils)
             if any(evil is node for evil in evils):
-                self.walk_collide(node, path_i, walk_i)
+                self.walk_collide()
                 return False
             # Update the new positions
             evils = new_evils
-        self.walk_success(len(path_nodes), walk_i)
+        self.walk_success()
         return True
 
-    def walk_success(self, path_index, walk_i):
+    def walk_success(self):
         self.walk_data_key.success = True
         self.increment_stats_for_walk_data()
         # print(" >> {} - No collision! Success!".format(walk_i))
 
-    def walk_collide(self, node, path_index, walk_i):
+    def walk_collide(self):
         self.walk_data_key.death = True
         self.increment_stats_for_walk_data()
         # print(" >> {} - Died on {}".format(walk_i, node))
@@ -235,10 +193,65 @@ class ConsoleView(View):
             i_evil += 1
             # Move evil (or stay)
             neighbors = self.nav_graph.graph.neighbors(evil)
-            remaining_evils = evils[i_evil:] if i_evil < len(evils)-1 else []
+            # remaining_evils = evils[i_evil:] if i_evil < len(evils)-1 else []
             available_neighbors = [neighbor for neighbor in neighbors if neighbor not in evils[i_evil:]]
             new_evils.append(random.choice(available_neighbors + [evil]))
         return new_evils
+
+    def print_progress(self, ratio, text):
+        sys.stdout.write("\rProgress: {:.3f}% - {}".format(ratio*100, text))
+        sys.stdout.flush()
+
+    def save_results(self):
+        used_keys = []
+        # print('\n\tRows \tCols \tDistance \tPathLen \tSuccess \tDeath \tCount')
+        with open('console_view_results.csv', 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(['sep=,'])
+            writer.writerow('\n\tRows \tCols \tDistance \tnEvils \tPathLen \tSuccess \tDeath \tCount'.split())
+            ki = -1
+            for walk_key in self.walk_keys:
+                ki += 1
+                key = walk_key.key()
+                r_count = self.stats[key]
+                if key not in used_keys:
+                    line = walk_key.csv_line()
+                    line.append(r_count)
+                    writer.writerow(line)
+                    self.print_progress(ki / len(self.walk_keys), 'Saving to file..')
+                    # print('\t{}\t{}'.format(walk_key, count))
+                used_keys.append(key)
+
+        keys = [key.key() for key in self.walk_keys]
+        if any(key not in keys for key in self.stats.keys()):
+            raise Exception('Something is very wrong.')
+
+    def generate_new_grid(self, n_rows, n_cols):
+        print('New grid: {} x {}'.format(n_rows, n_cols))
+        self.nav_graph.generate_viewless_grid(n_rows, n_cols, make_hex=False)
+
+    def create_until_path(self, n_rows, n_cols):
+        # Create graph and path
+        path_nodes = None
+        while not path_nodes:
+            self.nav_graph.clear()
+            self.generate_new_grid(n_rows, n_cols)
+            self.create_new_path()
+            path_nodes = self.nav_graph.pathfinder.get_path_nodes()
+        return path_nodes
+
+    def create_new_path(self):
+        start_node, destination_node = random.sample(self.nav_graph.graph.nodes(), 2)
+        self.nav_graph.set_start_node(start_node)
+        self.nav_graph.set_destination_node(destination_node)
+        self.nav_graph.pathfinder.update_to_new_path()
+        return self.nav_graph.pathfinder.get_path_nodes()
+
+    def get_n_evils_so(self, p_walk_ok=0.5):
+        dimension = self.walk_data_key.n_rows * self.walk_data_key.n_cols
+        path_len = self.walk_data_key.n_rows + self.walk_data_key.n_cols - 1
+        n_evils = dimension * (1 + math.log(p_walk_ok)/path_len)
+        return n_evils
 
 
 

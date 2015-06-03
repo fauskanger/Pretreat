@@ -118,9 +118,10 @@ class NavigationGraph():
             self.pathfinder.clear_node(node)
             self._set_node_state(node, Node.State.Default)
 
-    def set_start_node(self, node):
+    def set_start_node(self, node, print_label=False):
         if node and node != self.pathfinder.start_node:
-            print("Start node: {0}".format(node.label))
+            if print_label:
+                print("Start node: {0}".format(node.label))
             self.set_node_to_default(self.pathfinder.start_node)
             self.pathfinder.set_start_node(node)
             self._set_node_state(node, Node.State.Start)
@@ -128,9 +129,10 @@ class NavigationGraph():
             print("Nope! Cannot set start node: {0}, existing: {1}"
                   .format(node, self.pathfinder.start_node))
 
-    def set_destination_node(self, node):
+    def set_destination_node(self, node, print_label=False):
         if node and node != self.pathfinder.destination_node:
-            print("Destination node: {0}".format(node.label))
+            if print_label:
+                print("Destination node: {0}".format(node.label))
             self.set_node_to_default(self.pathfinder.destination_node)
             self.pathfinder.set_destination_node(node)
             self._set_node_state(node, Node.State.Destination)
@@ -461,11 +463,12 @@ class NavigationGraph():
         sorted_list = sorted(candidates, key=key_function)
         return sorted_list[:number_of_hits]
 
-    def clear(self):
+    def clear(self, print_msg=False):
         nodes = self.graph.nodes()
         for node in nodes:
             self.remove_node(node)
-        print("All nodes and edges removed.")
+        if print_msg:
+            print("All nodes and edges removed.")
 
     def generate_viewless_grid(self, row_count, col_count, make_hex=True):
         def dimension(n):
@@ -534,10 +537,10 @@ class NavigationGraph():
             for neighbor in neighbors:
                 degree = self.graph.degree(neighbor)
                 if degree < max_degree:
-                    val = random.random()*100
-                    if val > degree/max_degree*75:
-                        self.add_edge(neighbor, node)
-                        self.add_edge(node, neighbor)
+                    # val = random.random()*100
+                    # if val > degree/max_degree*75:
+                    self.add_edge(neighbor, node)
+                    self.add_edge(node, neighbor)
 
     def neighbors_of(self, node):
         try:
