@@ -67,7 +67,8 @@ class Pathfinder(pyglet.event.EventDispatcher):
             if node in path_nodes:
                 index = path_nodes.index(node)
                 previous_node = path_nodes[index-1] if index > 0 else None
-                self.split_path_on_waypoint(previous_node)
+                # self.waypoints.clear()
+                # self.split_path_on_waypoint(previous_node)
                 self.update_to_new_path()
 
     def set_start_node(self, node):
