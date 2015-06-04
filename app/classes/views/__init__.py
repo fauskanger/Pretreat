@@ -218,8 +218,8 @@ class ConsoleView(View):
                     line = walk_key.csv_line()
                     line.append(r_count)
                     writer.writerow(line)
-                    self.print_progress(ki / len(self.walk_keys), 'Saving to file..')
                     # print('\t{}\t{}'.format(walk_key, count))
+                self.print_progress(ki / len(self.walk_keys), 'Saving to file..')
                 used_keys.append(key)
 
         keys = [key.key() for key in self.walk_keys]
